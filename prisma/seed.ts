@@ -1,10 +1,12 @@
-import { prisma } from '../src/config/prisma';
-import bcryptjs from 'bcryptjs';
+// prisma/seed.ts
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcryptjs.hash('admin123', 10);
+  const passwordHash = await bcrypt.hash('admin123', 10);
 
-  // Admin
   const admin = await prisma.user.upsert({
     where: { email: 'admin@ux.com' },
     update: {},
@@ -12,25 +14,16 @@ async function main() {
       name: 'Admin',
       email: 'admin@ux.com',
       password: passwordHash,
-      isAdmin: true,
+      role: 'ADMIN',
       isActive: true
     }
   });
 
-  // Produtos
-  await prisma.product.createMany({
-    data: [
-      { name: 'Teclado Mecânico', description: 'Switch azul', price: 299.9, stock: 10 },
-      { name: 'Mouse Gamer', description: '16000 DPI', price: 149.9, stock: 25 }
-    ],
-    skipDuplicates: true
-  });
-
-  console.log('Seed ok! Admin:', admin.email);
+  console.log('Seed OK. Admin:', admin.email);
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })
