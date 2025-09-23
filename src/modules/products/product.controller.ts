@@ -1,99 +1,118 @@
 import { Request, Response } from 'express';
-import { randomUUID } from 'crypto';
 import { z } from 'zod';
-
-type ProductMem = {
-    id: string;
-    name: string;
-    description?: string;
-    price: number;
-    stock: number;
-};
-
-const mem: ProductMem[] = [];
+import { prisma } from '../../config/prisma';
 
 /* ========= Schemas ========= */
 const createProductSchema = z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    price: z.number().finite(),
-    stock: z.number().int().nonnegative().default(0),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  price: z.number().finite(),
+  stock: z.number().int().nonnegative().default(0),
 });
 
-const updateProductSchema = createProductSchema.partial();
+// ⚠️ Update SEM defaults para não injetar valores quando a chave não vem
+const updateProductSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  price: z.number().finite().optional(),
+  stock: z.number().int().nonnegative().optional(),
+});
 
 /* ========= Handlers ========= */
 
-export async function listProducts(_req: Request, res: Response) {
-    res.json(mem);
+export async function listProducts(req: Request, res: Response) {
+  const pageRaw = Number(req.query.page ?? 1);
+  const perPageRaw = Number(req.query.perPage ?? 10);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  const perPage = Math.min(Number.isFinite(perPageRaw) && perPageRaw > 0 ? perPageRaw : 10, 50);
+  const search = String(req.query.search ?? '').trim();
+
+  const where = search ? { name: { contains: search, mode: 'insensitive' as const } } : {};
+
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip: (page - 1) * perPage,
+      take: perPage,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  res.json({ page, perPage, total, items });
 }
 
 export async function getProduct(req: Request, res: Response) {
-    const p = mem.find((x) => x.id === req.params.id);
-    if (!p) return res.status(404).json({ message: 'Produto não encontrado' });
-    res.json(p);
+  const { id } = req.params;
+
+  const product = await prisma.product.findUnique({
+    where: { id: String(id) },
+  });
+
+  if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
+  res.json(product);
 }
 
 export async function createProduct(req: Request, res: Response) {
-    const parsed = createProductSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res
-            .status(400)
-            .json({ message: 'Dados inválidos', errors: parsed.error.flatten() });
-    }
+  const parsed = createProductSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Dados inválidos', errors: parsed.error.flatten() });
+  }
 
-    const data = parsed.data;
+  const data = parsed.data;
 
-    // description só entra se vier definida (compatível com exactOptionalPropertyTypes)
-    const prod: ProductMem = {
-        id: randomUUID(),
-        name: data.name,
-        price: data.price,
-        stock: data.stock ?? 0,
-        ...(data.description !== undefined ? { description: data.description } : {}),
-    };
+  const product = await prisma.product.create({
+    data: {
+      name: data.name,
+      price: data.price,
+      stock: data.stock ?? 0,
+      ...(data.description !== undefined ? { description: data.description } : {}),
+    },
+  });
 
-    mem.push(prod);
-    res.status(201).json(prod);
+  res.status(201).json(product);
 }
 
 export async function updateProduct(req: Request, res: Response) {
-    const idx = mem.findIndex((x) => x.id === req.params.id);
-    if (idx === -1) {
-        return res.status(404).json({ message: 'Produto não encontrado' });
-    }
+  const { id } = req.params;
 
-    const parsed = updateProductSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res
-            .status(400)
-            .json({ message: 'Dados inválidos', errors: parsed.error.flatten() });
-    }
+  const current = await prisma.product.findUnique({ where: { id: String(id) } });
+  if (!current) return res.status(404).json({ message: 'Produto não encontrado' });
 
-    // TS agora sabe que `mem[idx]` existe
-    const current = mem[idx] as ProductMem;
-    const patch = parsed.data;
+  const parsed = updateProductSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Dados inválidos', errors: parsed.error.flatten() });
+  }
 
-    // Garante campos obrigatórios sempre definidos
-    const next: ProductMem = {
-        id: current.id,
-        name: patch.name ?? current.name,
-        price: patch.price ?? current.price,
-        stock: patch.stock ?? current.stock,
-        ...(patch.description !== undefined
-            ? { description: patch.description }
-            : current.description !== undefined
-                ? { description: current.description }
-                : {}),
-    };
+  const patch = parsed.data;
 
-    mem[idx] = next;
-    res.json(mem[idx]);
+  // Envia apenas campos presentes (evita undefined tocar em campos obrigatórios)
+  const data: {
+    name?: string;
+    price?: number;
+    stock?: number;
+    description?: string | null;
+  } = {};
+
+  if (patch.name !== undefined) data.name = patch.name;
+  if (patch.price !== undefined) data.price = patch.price;
+  if (patch.stock !== undefined) data.stock = patch.stock;
+  if (patch.description !== undefined) data.description = patch.description;
+
+  const updated = await prisma.product.update({
+    where: { id: String(id) },
+    data,
+  });
+
+  res.json(updated);
 }
 
 export async function deleteProduct(req: Request, res: Response) {
-    const idx = mem.findIndex((x) => x.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ message: 'Produto não encontrado' });
-    mem.splice(idx, 1);
-    res.status(204).send();
+  const { id } = req.params;
+
+  const current = await prisma.product.findUnique({ where: { id: String(id) } });
+  if (!current) return res.status(404).json({ message: 'Produto não encontrado' });
+
+  await prisma.product.delete({ where: { id: String(id) } });
+  res.status(204).send();
 }
