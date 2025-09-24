@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { api } from '@/lib/api';
+import { isAuthenticated, clearToken } from '@/lib/auth';
 
 type Product = {
   id: string;
@@ -13,10 +14,22 @@ type Product = {
 };
 
 export default function ProductsPage() {
+  // gate de proteção da página
+  const [ready, setReady] = useState(false);
+
   const [items, setItems] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // protege a rota: sem token -> volta pro login
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      window.location.href = '/login';
+    } else {
+      setReady(true);
+    }
+  }, []);
 
   async function load() {
     try {
@@ -42,15 +55,31 @@ export default function ProductsPage() {
   }
 
   useEffect(() => {
-    void load();
+    if (ready) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ready]);
+
+  const handleLogout = () => {
+    clearToken();
+    window.location.href = '/login';
+  };
+
+  if (!ready) return null; // ou um spinner
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Produtos</h1>
+      {/* Header simples com Logout */}
+      <header className="flex items-center justify-between pb-4 border-b">
+        <h1 className="text-2xl font-semibold">Produtos</h1>
+        <button
+          onClick={handleLogout}
+          className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
+        >
+          Sair
+        </button>
+      </header>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-2">
         <input
           className="border rounded p-2 flex-1"
           placeholder="Buscar por nome…"
@@ -76,7 +105,7 @@ export default function ProductsPage() {
               {p.description && <div className="text-sm text-gray-600">{p.description}</div>}
               <div className="text-sm mt-1">R$ {p.price.toFixed(2)} · estoque: {p.stock}</div>
             </div>
-            {/* futuro: botão “Adicionar ao carrinho” usando token do login */}
+            {/* Futuro: botão “Adicionar ao carrinho” usando api.post('/cart/items', { productId, quantity }) */}
           </li>
         ))}
       </ul>
