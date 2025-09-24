@@ -130,3 +130,29 @@ export async function removeItem(req: Request<{ itemId: string }>, res: Response
   await prisma.cartItem.delete({ where: { id: itemId } });
   res.status(204).send();
 }
+
+/** Limpa todo o carrinho do usuário logado */
+export async function clearCart(req: Request, res: Response) {
+  try {
+    // Aqui pegamos o userId que você injeta no middleware de auth
+    const userId = (req as Request & { user?: { id: string } }).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Usuário não autenticado' });
+    }
+
+    // Apaga todos os itens cujo carrinho pertence ao usuário
+    await prisma.cartItem.deleteMany({
+      where: {
+        cart: {
+          userId: userId,
+        },
+      },
+    });
+
+    res.status(204).send(); // Sucesso, sem conteúdo
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao limpar o carrinho' });
+  }
+}
