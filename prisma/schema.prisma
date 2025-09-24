@@ -39,14 +39,12 @@ model Product {
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id])
+  id        String   @id @default(uuid())
+  userId    String   @unique   // <- garante que cada user tenha só 1 cart
+  user      User     @relation(fields: [userId], references: [id])
   items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  @@index([userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CartItem {
