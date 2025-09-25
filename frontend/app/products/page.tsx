@@ -14,15 +14,13 @@ type Product = {
 };
 
 export default function ProductsPage() {
-  // gate de proteção da página
   const [ready, setReady] = useState(false);
-
   const [items, setItems] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
-  // protege a rota: sem token -> volta pro login
   useEffect(() => {
     if (!isAuthenticated()) {
       window.location.href = '/login';
@@ -64,19 +62,43 @@ export default function ProductsPage() {
     window.location.href = '/login';
   };
 
-  if (!ready) return null; // ou um spinner
+  async function addToCart(productId: string) {
+    try {
+      setAddingId(productId);
+      await api.post('/cart/items', { productId, quantity: 1 });
+      // feedback simples
+      alert('Item adicionado ao carrinho!');
+      // se preferir, redirecione direto:
+      // window.location.href = '/cart';
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        const msg = (e.response?.data as { message?: string } | undefined)?.message;
+        alert(msg ?? e.message ?? 'Erro ao adicionar ao carrinho');
+      } else if (e instanceof Error) {
+        alert(e.message);
+      } else {
+        alert('Erro ao adicionar ao carrinho');
+      }
+    } finally {
+      setAddingId(null);
+    }
+  }
+
+  if (!ready) return null;
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
-      {/* Header simples com Logout */}
       <header className="flex items-center justify-between pb-4 border-b">
         <h1 className="text-2xl font-semibold">Produtos</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-2">
+          <a href="/cart" className="text-sm underline">Meu carrinho</a>
+          <button
+            onClick={handleLogout}
+            className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       <div className="flex gap-2 pt-2">
@@ -105,7 +127,14 @@ export default function ProductsPage() {
               {p.description && <div className="text-sm text-gray-600">{p.description}</div>}
               <div className="text-sm mt-1">R$ {p.price.toFixed(2)} · estoque: {p.stock}</div>
             </div>
-            {/* Futuro: botão “Adicionar ao carrinho” usando api.post('/cart/items', { productId, quantity }) */}
+            <button
+              disabled={p.stock <= 0 || addingId === p.id}
+              onClick={() => addToCart(p.id)}
+              className="bg-black text-white px-3 py-2 rounded disabled:opacity-50"
+              title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
+            >
+              {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
+            </button>
           </li>
         ))}
       </ul>
