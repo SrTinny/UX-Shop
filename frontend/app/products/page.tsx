@@ -66,10 +66,7 @@ export default function ProductsPage() {
     try {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
-      // feedback simples
       alert('Item adicionado ao carrinho!');
-      // se preferir, redirecione direto:
-      // window.location.href = '/cart';
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         const msg = (e.response?.data as { message?: string } | undefined)?.message;
