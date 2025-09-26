@@ -5,6 +5,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "@/lib/api";
 import { useState } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -29,29 +31,30 @@ export default function LoginPage() {
       const token = res.data?.token;
       if (token) {
         localStorage.setItem("token", token);
-        alert("Login OK!");
-        // redirecionar para /products
+        toast.success("Login efetuado!");
         window.location.href = "/products";
       } else {
         setError("Token não recebido.");
+        toast.error("Token não recebido.");
       }
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else if (typeof e === "object" && e !== null && "response" in e) {
-        // erro do axios (ou similar)
-        const axiosError = e as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message ?? "Erro ao logar");
-      } else {
-        setError("Erro inesperado");
+      let msg = "Erro ao logar";
+      if (axios.isAxiosError(e)) {
+        msg = e.response?.data?.message ?? e.message ?? msg;
+      } else if (e instanceof Error) {
+        msg = e.message;
       }
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   return (
     <main className="mx-auto max-w-md p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Login</h1>
+
       {error && <p className="text-red-600 text-sm">{error}</p>}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
           <label className="block text-sm mb-1">E-mail</label>
@@ -64,6 +67,7 @@ export default function LoginPage() {
             <p className="text-sm text-red-600">{errors.email.message}</p>
           )}
         </div>
+
         <div>
           <label className="block text-sm mb-1">Senha</label>
           <input
@@ -75,6 +79,7 @@ export default function LoginPage() {
             <p className="text-sm text-red-600">{errors.password.message}</p>
           )}
         </div>
+
         <button
           disabled={isSubmitting}
           className="bg-black text-white px-4 py-2 rounded"
@@ -82,6 +87,7 @@ export default function LoginPage() {
           {isSubmitting ? "Entrando..." : "Entrar"}
         </button>
       </form>
+
       <p className="text-sm">
         Não tem conta?{" "}
         <a className="underline" href="/register">

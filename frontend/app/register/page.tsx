@@ -7,6 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 /* ===================== Helpers (CPF) ===================== */
 const onlyDigits = (v: string) => (v || "").replace(/\D/g, "");
@@ -46,7 +47,7 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-/* ===== Mock de CPF duplicado (simulação em localStorage) ===== */
+/* Mock de CPF duplicado em localStorage */
 function isCpfDuplicatedMock(cpfMasked: string) {
   const key = "cpfs_mock";
   const list: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
@@ -61,7 +62,6 @@ function addCpfMock(cpfMasked: string) {
     localStorage.setItem(key, JSON.stringify([...list, digits]));
   }
 }
-
 /* ===================== Página ===================== */
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
@@ -86,40 +86,40 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setError(null);
 
-    // valida CPF real
     if (!isValidCPF(data.cpf)) {
-      setError("CPF inválido");
+      const msg = "CPF inválido";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
-    // simula CPF duplicado (requisito do desafio)
     if (isCpfDuplicatedMock(data.cpf)) {
-      setError("CPF já cadastrado (simulado)");
+      const msg = "CPF já cadastrado (simulado)";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     try {
-      // sua API usa name, email, password
       await api.post("/auth/register", {
         name: data.name,
         email: data.email,
         password: data.password,
       });
 
-      // marca CPF como "usado" no mock
       addCpfMock(data.cpf);
 
-      alert("Cadastro criado! Verifique o link de ativação no console do backend.");
+      toast.success("Cadastro criado! Verifique o link de ativação no console do backend.");
       window.location.href = "/login";
     } catch (e: unknown) {
+      let msg = "Erro ao registrar";
       if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? e.message ?? "Erro ao registrar");
+        msg = e.response?.data?.message ?? e.message ?? msg;
       } else if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("Erro desconhecido");
+        msg = e.message;
       }
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -129,21 +129,18 @@ export default function RegisterPage() {
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        {/* Nome */}
         <div>
           <label className="block text-sm mb-1">Nome</label>
           <input className="w-full border rounded p-2" {...register("name")} />
           {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
         </div>
 
-        {/* E-mail */}
         <div>
           <label className="block text-sm mb-1">E-mail</label>
           <input className="w-full border rounded p-2" type="email" {...register("email")} />
           {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
         </div>
 
-        {/* CPF (IMaskInput) */}
         <div>
           <label className="block text-sm mb-1">CPF</label>
           <Controller
@@ -151,7 +148,6 @@ export default function RegisterPage() {
             name="cpf"
             render={({ field }) => (
               <IMaskInput
-                // máscara brasileira de CPF
                 mask="000.000.000-00"
                 value={field.value}
                 onAccept={(val) => field.onChange(val)}
@@ -165,7 +161,6 @@ export default function RegisterPage() {
           {errors.cpf && <p className="text-sm text-red-600">{errors.cpf.message}</p>}
         </div>
 
-        {/* Telefone (IMaskInput) */}
         <div>
           <label className="block text-sm mb-1">Telefone</label>
           <Controller
@@ -173,7 +168,6 @@ export default function RegisterPage() {
             name="phone"
             render={({ field }) => (
               <IMaskInput
-                // celular com nono dígito
                 mask="(00) 0 0000-0000"
                 value={field.value}
                 onAccept={(val) => field.onChange(val)}
@@ -187,14 +181,12 @@ export default function RegisterPage() {
           {errors.phone && <p className="text-sm text-red-600">{errors.phone.message}</p>}
         </div>
 
-        {/* Senha */}
         <div>
           <label className="block text-sm mb-1">Senha</label>
           <input className="w-full border rounded p-2" type="password" {...register("password")} />
           {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
         </div>
 
-        {/* Confirmar senha */}
         <div>
           <label className="block text-sm mb-1">Confirmar senha</label>
           <input className="w-full border rounded p-2" type="password" {...register("confirm")} />

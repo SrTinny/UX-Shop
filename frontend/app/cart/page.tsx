@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated, clearToken } from '@/lib/auth';
+import { toast } from 'sonner';
 
 type CartItem = {
   id: string;
@@ -43,15 +44,18 @@ export default function CartPage() {
       setError(null);
       const res = await api.get('/cart');
       setCart(res.data as Cart);
-    } catch (e: unknown) {
-      if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? e.message ?? 'Erro ao carregar carrinho');
-      } else if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('Erro ao carregar carrinho');
+      if ((res.data as Cart).items.length === 0) {
+        toast.info('Seu carrinho está vazio.');
       }
+    } catch (e: unknown) {
+      let msg = 'Erro ao carregar carrinho';
+      if (axios.isAxiosError(e)) {
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -79,22 +83,22 @@ export default function CartPage() {
   async function updateQty(item: CartItem, nextQty: number) {
     if (nextQty < 1) return;
     if (nextQty > item.product.stock) {
-      alert('Quantidade acima do estoque disponível.');
+      toast.warning('Quantidade acima do estoque disponível.');
       return;
     }
     try {
       setSavingId(item.id);
       await api.patch(`/cart/items/${item.id}`, { quantity: nextQty });
       await load();
+      toast.success('Quantidade atualizada');
     } catch (e: unknown) {
+      let msg = 'Erro ao atualizar item';
       if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        alert(msg ?? e.message ?? 'Erro ao atualizar item');
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
       } else if (e instanceof Error) {
-        alert(e.message);
-      } else {
-        alert('Erro ao atualizar item');
+        msg = e.message;
       }
+      toast.error(msg);
     } finally {
       setSavingId(null);
     }
@@ -105,15 +109,15 @@ export default function CartPage() {
       setRemovingId(itemId);
       await api.delete(`/cart/items/${itemId}`);
       await load();
+      toast.success('Item removido');
     } catch (e: unknown) {
+      let msg = 'Erro ao remover item';
       if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        alert(msg ?? e.message ?? 'Erro ao remover item');
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
       } else if (e instanceof Error) {
-        alert(e.message);
-      } else {
-        alert('Erro ao remover item');
+        msg = e.message;
       }
+      toast.error(msg);
     } finally {
       setRemovingId(null);
     }
@@ -124,15 +128,15 @@ export default function CartPage() {
       if (!confirm('Deseja limpar o carrinho?')) return;
       await api.delete('/cart');
       await load();
+      toast.success('Carrinho limpo');
     } catch (e: unknown) {
+      let msg = 'Erro ao limpar carrinho';
       if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        alert(msg ?? e.message ?? 'Erro ao limpar carrinho');
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
       } else if (e instanceof Error) {
-        alert(e.message);
-      } else {
-        alert('Erro ao limpar carrinho');
+        msg = e.message;
       }
+      toast.error(msg);
     }
   }
 
@@ -242,7 +246,7 @@ export default function CartPage() {
               Limpar carrinho
             </button>
             <button
-              onClick={() => alert('Fluxo de checkout (futuro)')}
+              onClick={() => toast.info('Fluxo de checkout (futuro)')}
               className="bg-black text-white px-4 py-2 rounded"
             >
               Finalizar

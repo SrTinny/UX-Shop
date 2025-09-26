@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated, clearToken } from '@/lib/auth';
+import { toast } from 'sonner';
 
 type Product = {
   id: string;
@@ -38,15 +39,18 @@ export default function ProductsPage() {
       });
       const data = res.data as { items?: Product[] };
       setItems(data.items ?? []);
-    } catch (e: unknown) {
-      if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? e.message ?? 'Erro ao carregar produtos');
-      } else if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('Erro ao carregar produtos');
+      if ((data.items ?? []).length === 0) {
+        toast.info('Nenhum produto encontrado.');
       }
+    } catch (e: unknown) {
+      let msg = 'Erro ao carregar produtos';
+      if (axios.isAxiosError(e)) {
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -66,16 +70,15 @@ export default function ProductsPage() {
     try {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
-      alert('Item adicionado ao carrinho!');
+      toast.success('Item adicionado ao carrinho!');
     } catch (e: unknown) {
+      let msg = 'Erro ao adicionar ao carrinho';
       if (axios.isAxiosError(e)) {
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        alert(msg ?? e.message ?? 'Erro ao adicionar ao carrinho');
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
       } else if (e instanceof Error) {
-        alert(e.message);
-      } else {
-        alert('Erro ao adicionar ao carrinho');
+        msg = e.message;
       }
+      toast.error(msg);
     } finally {
       setAddingId(null);
     }
