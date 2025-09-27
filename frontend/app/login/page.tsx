@@ -33,8 +33,9 @@ export default function LoginPage() {
         toast.success("Login efetuado!");
         window.location.href = "/products";
       } else {
-        setError("Token não recebido.");
-        toast.error("Token não recebido.");
+        const msg = "Token não recebido.";
+        setError(msg);
+        toast.error(msg);
       }
     } catch (e: unknown) {
       let msg = "Erro ao logar";
@@ -54,7 +55,11 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center text-brand">Login</h1>
 
         {error && (
-          <p className="text-red-600 text-sm text-center" role="alert" aria-live="polite">
+          <p
+            className="text-red-600 text-sm text-center"
+            role="alert"
+            aria-live="polite"
+          >
             {error}
           </p>
         )}
@@ -94,7 +99,12 @@ export default function LoginPage() {
             )}
           </div>
 
-          <button disabled={isSubmitting} className="btn btn-primary w-full">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-disabled={isSubmitting}
+          >
             {isSubmitting ? "Entrando..." : "Entrar"}
           </button>
         </form>
