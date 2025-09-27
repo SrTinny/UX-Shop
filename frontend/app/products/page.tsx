@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
 import { api } from '@/lib/api';
-import { isAuthenticated, clearToken } from '@/lib/auth';
+import { isAuthenticated } from '@/lib/auth';
 import { toast } from 'sonner';
 
 type Product = {
@@ -15,9 +16,10 @@ type Product = {
 };
 
 const formatBRL = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    v,
-  );
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(v);
 
 export default function ProductsPage() {
   const [ready, setReady] = useState(false);
@@ -35,9 +37,10 @@ export default function ProductsPage() {
   // botão adicionar
   const [addingId, setAddingId] = useState<string | null>(null);
 
-  // controle de debounce
+  // debounce
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // guarda de auth
   useEffect(() => {
     if (!isAuthenticated()) {
       window.location.href = '/login';
@@ -50,11 +53,9 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       setError(null);
-
       const res = await api.get('/products', {
         params: { page: 1, perPage: 20, search: term || undefined },
       });
-
       const data = res.data as { items?: Product[] };
       const list = data.items ?? [];
       setItems(list);
@@ -114,22 +115,17 @@ export default function ProductsPage() {
     };
   }, [search, ready]);
 
-  const handleLogout = () => {
-    clearToken();
-    window.location.href = '/login';
-  };
-
   async function addToCart(productId: string) {
-    // otimista: aumenta badge já
+    // update otimista: sobe badge já
     const prev = cartQty;
     setCartQty((q) => q + 1);
+
     try {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
       toast.success('Item adicionado ao carrinho!');
     } catch (e: unknown) {
-      // desfaz o otimista
-      setCartQty(prev);
+      setCartQty(prev); // desfaz otimista
       let msg = 'Erro ao adicionar ao carrinho';
       if (axios.isAxiosError(e)) {
         msg =
@@ -150,101 +146,140 @@ export default function ProductsPage() {
   if (!ready) return null;
 
   return (
-    <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <header className="flex items-center justify-between pb-4 border-b">
+    <main className="mx-auto max-w-5xl p-6 space-y-6">
+      {/* Top bar local da página (o Header global já está no layout) */}
+      <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Produtos</h1>
-        <div className="flex items-center gap-3">
-          <a href="/cart" className="text-sm underline flex items-center gap-2">
-            Meu carrinho
-            <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-black text-white text-xs">
-              {cartLoading ? '…' : cartQty}
-            </span>
-          </a>
-          <button
-            onClick={handleLogout}
-            className="text-sm bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700 transition"
-          >
-            Sair
-          </button>
-        </div>
+
+        <Link
+          href="/cart"
+          className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-brand/10 text-brand hover:bg-brand/15 transition"
+        >
+          Meu carrinho
+          <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white text-xs">
+            {cartLoading ? '…' : cartQty}
+          </span>
+        </Link>
       </header>
 
+      {/* Busca */}
       <form
-        className="flex gap-2 pt-2"
+        className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          // submit manual força buscar sem esperar o debounce
-          void fetchProducts(search.trim());
+          void fetchProducts(search.trim()); // força buscar sem esperar o debounce
         }}
       >
-        <input
-          className="border rounded p-2 flex-1"
-          placeholder="Buscar por nome…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative flex-1">
+          <input
+            className="input-base pl-9"
+            placeholder="Buscar por nome…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar produtos por nome"
+          />
+          <svg
+            aria-hidden
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+          className="btn btn-primary"
+          title="Buscar"
         >
           {loading ? 'Buscando…' : 'Buscar'}
         </button>
       </form>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {/* Mensagem de erro */}
+      {error && (
+        <p className="text-red-600 text-sm" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
 
-      {/* SKELETON */}
+      {/* Skeleton */}
       {loading && (
-        <ul className="grid gap-3" aria-busy="true" aria-live="polite">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <li
-              key={i}
-              className="border rounded p-3 flex items-center justify-between animate-pulse"
-            >
-              <div className="flex-1">
-                <div className="h-4 w-40 bg-gray-200 rounded mb-2" />
-                <div className="h-3 w-72 bg-gray-200 rounded mb-2" />
-                <div className="h-3 w-56 bg-gray-200 rounded" />
-              </div>
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li key={i} className="card p-4 animate-pulse">
+              <div className="h-4 w-3/5 bg-gray-200 rounded mb-2" />
+              <div className="h-3 w-full bg-gray-200 rounded mb-2" />
+              <div className="h-3 w-2/3 bg-gray-200 rounded mb-4" />
               <div className="h-9 w-28 bg-gray-200 rounded" />
             </li>
           ))}
         </ul>
       )}
 
+      {/* Estado vazio */}
       {!loading && !error && !hasResults && (
-        <p className="text-sm text-gray-600">Nenhum produto encontrado.</p>
+        <div className="card p-8 text-center">
+          <p className="text-sm text-gray-600">
+            Nenhum produto encontrado. Tente outra busca.
+          </p>
+        </div>
       )}
 
+      {/* Lista */}
       {!loading && hasResults && (
-        <ul className="grid gap-3">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((p) => (
-            <li
-              key={p.id}
-              className="border rounded p-3 flex items-center justify-between"
-            >
-              <div>
-                <div className="font-medium">{p.name}</div>
+            <li key={p.id} className="card p-4 flex flex-col gap-3">
+              <div className="flex-1 min-h-20">
+                <h3 className="font-medium">{p.name}</h3>
                 {p.description && (
-                  <div className="text-sm text-gray-600">{p.description}</div>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                    {p.description}
+                  </p>
                 )}
-                <div className="text-sm mt-1">
-                  {formatBRL(p.price)} · estoque: {p.stock}
-                </div>
               </div>
-              <button
-                disabled={p.stock <= 0 || addingId === p.id}
-                onClick={() => addToCart(p.id)}
-                className="bg-black text-white px-3 py-2 rounded disabled:opacity-50"
-                title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
-              >
-                {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
-              </button>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="font-semibold">{formatBRL(p.price)}</div>
+                  <div
+                    className={clsx(
+                      'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
+                      p.stock > 0
+                        ? 'bg-accent/10 text-accent'
+                        : 'bg-gray-200 text-gray-600',
+                    )}
+                    title={`Estoque: ${p.stock}`}
+                  >
+                    {p.stock > 0 ? `Estoque: ${p.stock}` : 'Sem estoque'}
+                  </div>
+                </div>
+
+                <button
+                  disabled={p.stock <= 0 || addingId === p.id}
+                  onClick={() => addToCart(p.id)}
+                  className="btn btn-primary disabled:opacity-60"
+                  title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
+                >
+                  {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
     </main>
   );
+}
+
+/** util: clsx simples pra não adicionar a lib */
+function clsx(...args: (string | false | undefined)[]) {
+  return args.filter(Boolean).join(' ');
 }
