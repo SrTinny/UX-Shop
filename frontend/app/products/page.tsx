@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated, clearToken } from '@/lib/auth';
@@ -14,14 +14,19 @@ type Product = {
   stock: number;
 };
 
+const formatBRL = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+    v,
+  );
+
 export default function ProductsPage() {
   const [ready, setReady] = useState(false);
 
   // produtos
   const [items, setItems] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // carrinho (badge)
   const [cartQty, setCartQty] = useState<number>(0);
@@ -29,6 +34,9 @@ export default function ProductsPage() {
 
   // botão adicionar
   const [addingId, setAddingId] = useState<string | null>(null);
+
+  // controle de debounce
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -38,18 +46,21 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // carrega produtos
-  async function loadProducts() {
+  async function fetchProducts(term?: string) {
     try {
       setLoading(true);
       setError(null);
+
       const res = await api.get('/products', {
-        params: { page: 1, perPage: 20, search: search || undefined },
+        params: { page: 1, perPage: 20, search: term || undefined },
       });
+
       const data = res.data as { items?: Product[] };
-      setItems(data.items ?? []);
-      if ((data.items ?? []).length === 0) {
-        toast.info('Nenhum produto encontrado.');
+      const list = data.items ?? [];
+      setItems(list);
+
+      if (list.length === 0 && (term?.length ?? 0) > 0) {
+        toast.info('Nenhum produto encontrado para sua busca.');
       }
     } catch (e: unknown) {
       let msg = 'Erro ao carregar produtos';
@@ -68,30 +79,40 @@ export default function ProductsPage() {
     }
   }
 
-  // carrega carrinho (para badge)
-  async function loadCartQty() {
+  async function fetchCartQty() {
     try {
       setCartLoading(true);
       const res = await api.get('/cart');
       const total = (res.data?.items ?? []).reduce(
         (acc: number, it: { quantity: number }) => acc + it.quantity,
-        0
+        0,
       );
       setCartQty(total);
     } catch {
-      // silêncio: se não houver carrinho ainda, badge = 0
       setCartQty(0);
     } finally {
       setCartLoading(false);
     }
   }
 
+  // carga inicial
   useEffect(() => {
     if (!ready) return;
-    void loadProducts();
-    void loadCartQty();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void fetchProducts();
+    void fetchCartQty();
   }, [ready]);
+
+  // debounce da busca
+  useEffect(() => {
+    if (!ready) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      void fetchProducts(search.trim());
+    }, 450);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search, ready]);
 
   const handleLogout = () => {
     clearToken();
@@ -99,13 +120,16 @@ export default function ProductsPage() {
   };
 
   async function addToCart(productId: string) {
+    // otimista: aumenta badge já
+    const prev = cartQty;
+    setCartQty((q) => q + 1);
     try {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
       toast.success('Item adicionado ao carrinho!');
-      // recarrega a badge com o total atualizado
-      await loadCartQty();
     } catch (e: unknown) {
+      // desfaz o otimista
+      setCartQty(prev);
       let msg = 'Erro ao adicionar ao carrinho';
       if (axios.isAxiosError(e)) {
         msg =
@@ -120,6 +144,8 @@ export default function ProductsPage() {
       setAddingId(null);
     }
   }
+
+  const hasResults = useMemo(() => items.length > 0, [items]);
 
   if (!ready) return null;
 
@@ -136,30 +162,41 @@ export default function ProductsPage() {
           </a>
           <button
             onClick={handleLogout}
-            className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
+            className="text-sm bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700 transition"
           >
             Sair
           </button>
         </div>
       </header>
 
-      <div className="flex gap-2 pt-2">
+      <form
+        className="flex gap-2 pt-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // submit manual força buscar sem esperar o debounce
+          void fetchProducts(search.trim());
+        }}
+      >
         <input
           className="border rounded p-2 flex-1"
           placeholder="Buscar por nome…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={loadProducts} className="bg-black text-white px-4 py-2 rounded">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+        >
           {loading ? 'Buscando…' : 'Buscar'}
         </button>
-      </div>
+      </form>
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {/* SKELETON */}
       {loading && (
-        <ul className="grid gap-3">
+        <ul className="grid gap-3" aria-busy="true" aria-live="polite">
           {Array.from({ length: 4 }).map((_, i) => (
             <li
               key={i}
@@ -176,21 +213,24 @@ export default function ProductsPage() {
         </ul>
       )}
 
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && !hasResults && (
         <p className="text-sm text-gray-600">Nenhum produto encontrado.</p>
       )}
 
-      {!loading && items.length > 0 && (
+      {!loading && hasResults && (
         <ul className="grid gap-3">
           {items.map((p) => (
-            <li key={p.id} className="border rounded p-3 flex items-center justify-between">
+            <li
+              key={p.id}
+              className="border rounded p-3 flex items-center justify-between"
+            >
               <div>
                 <div className="font-medium">{p.name}</div>
                 {p.description && (
                   <div className="text-sm text-gray-600">{p.description}</div>
                 )}
                 <div className="text-sm mt-1">
-                  R$ {p.price.toFixed(2)} · estoque: {p.stock}
+                  {formatBRL(p.price)} · estoque: {p.stock}
                 </div>
               </div>
               <button
