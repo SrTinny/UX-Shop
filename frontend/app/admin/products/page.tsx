@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import axios from "axios";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -19,24 +19,28 @@ type Product = {
   updatedAt?: string;
 };
 
+/** Validação: z.coerce.number transforma string -> number automaticamente */
 const productSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatório'),
+  name: z.string().min(1, "Nome obrigatório"),
   description: z.string().optional(),
-
-  price: z
-    .number()
-    .refine((v) => !Number.isNaN(v), { message: 'Informe um número' })
-    .nonnegative('Preço inválido'),
-
-  stock: z
-    .number()
-    .refine((v) => !Number.isNaN(v), { message: 'Informe um número' })
-    .int('Estoque deve ser inteiro')
-    .nonnegative('Estoque inválido'),
+  price: z.coerce.number().nonnegative("Preço inválido"),
+  stock: z.coerce.number().int("Estoque deve ser inteiro").nonnegative("Estoque inválido"),
 });
-
-
 type ProductFormData = z.infer<typeof productSchema>;
+
+/* ===== Helpers ===== */
+const formatBRL = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+
+const formatDate = (iso?: string) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(d);
+};
 
 export default function AdminProductsPage() {
   const [ready, setReady] = useState(false);
@@ -46,6 +50,7 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Guard (auth + role)
   useEffect(() => {
@@ -67,15 +72,27 @@ export default function AdminProductsPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormData>,
     defaultValues: { name: "", description: "", price: 0, stock: 0 },
   });
+
+  // Debounce da busca
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const debounceRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, [search]);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const res = await api.get("/products", {
-        params: { page: 1, perPage: 50, search: search || undefined },
+        params: { page: 1, perPage: 50, search: debouncedSearch || undefined },
       });
       setItems((res.data?.items ?? []) as Product[]);
     } catch (e: unknown) {
@@ -88,11 +105,12 @@ export default function AdminProductsPage() {
       } else if (e instanceof Error) {
         msg = e.message;
       }
+      setErrorMsg(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (ready) void load();
@@ -103,10 +121,7 @@ export default function AdminProductsPage() {
   function startCreate() {
     setEditing(null);
     reset({ name: "", description: "", price: 0, stock: 0 });
-    // rola a página até o form
-    document
-      .getElementById("product-form")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function startEdit(p: Product) {
@@ -117,12 +132,10 @@ export default function AdminProductsPage() {
       price: p.price,
       stock: p.stock,
     });
-    document
-      .getElementById("product-form")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function onSubmit(data: ProductFormData) {
+  const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
     try {
       setSaving(true);
       if (isEditMode && editing) {
@@ -149,7 +162,7 @@ export default function AdminProductsPage() {
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   async function remove(id: string) {
     if (!confirm("Remover produto?")) return;
@@ -157,6 +170,8 @@ export default function AdminProductsPage() {
       setRemovingId(id);
       await api.delete(`/products/${id}`);
       toast.success("Produto removido");
+      // otimista: remove local antes do reload para resposta visual rápida
+      setItems((prev) => prev.filter((p) => p.id !== id));
       await load();
     } catch (e: unknown) {
       let msg = "Erro ao remover";
@@ -182,173 +197,162 @@ export default function AdminProductsPage() {
   if (!ready) return null;
 
   return (
-    <main className="mx-auto max-w-5xl p-6 space-y-6">
-      <header className="flex items-center justify-between pb-4 border-b">
-        <h1 className="text-2xl font-semibold">Admin • Produtos</h1>
-        <div className="flex items-center gap-3">
-          <a className="text-sm underline" href="/products">
+    <main className="mx-auto max-w-6xl p-6 space-y-6">
+      {/* Header */}
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-brand">Admin • Produtos</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Gerencie catálogo, preços e estoque.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a className="btn border border-black/10 dark:border-white/10" href="/products">
             Loja
           </a>
-          <button
-            className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
-            onClick={handleLogout}
-          >
+          <button onClick={handleLogout} className="btn btn-accent">
             Sair
           </button>
         </div>
       </header>
 
-      {/* Busca */}
-      <div className="flex gap-2">
-        <input
-          className="border rounded p-2 flex-1"
-          placeholder="Buscar por nome…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button
-          onClick={load}
-          className="bg-black text-white px-4 py-2 rounded"
+      {/* Toolbar de busca */}
+      <section className="card p-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <label htmlFor="search" className="sr-only">
+            Buscar por nome
+          </label>
+          <input
+            id="search"
+            className="input-base flex-1"
+            placeholder="Buscar por nome…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar produtos por nome"
+          />
+          <button onClick={load} className="btn btn-primary whitespace-nowrap">
+            {loading ? "Buscando…" : "Buscar"}
+          </button>
+          <button onClick={startCreate} className="btn border border-black/10 dark:border-white/10">
+            Novo produto
+          </button>
+        </div>
+        <div
+          className="mt-2 text-sm text-red-600 min-h-5"
+          role="status"
+          aria-live="polite"
         >
-          {loading ? "Buscando…" : "Buscar"}
-        </button>
-        <button onClick={startCreate} className="border px-4 py-2 rounded">
-          Novo produto
-        </button>
-      </div>
+          {errorMsg ?? ""}
+        </div>
+      </section>
 
-      {/* Tabela */}
-      <div className="overflow-x-auto border rounded">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left p-3">Nome</th>
-              <th className="text-left p-3">Preço</th>
-              <th className="text-left p-3">Estoque</th>
-              <th className="text-left p-3">Descrição</th>
-              <th className="p-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!loading && items.length === 0 && (
-              <tr>
-                <td className="p-3 text-gray-600" colSpan={5}>
-                  Nenhum produto.
-                </td>
+      {/* Lista/Tabela */}
+      <section className="card overflow-hidden">
+        <div className="max-h-[520px] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+              <tr className="[&>th]:text-left [&>th]:p-3 [&>th]:font-semibold text-slate-700 dark:text-slate-200">
+                <th>Nome</th>
+                <th>Preço</th>
+                <th>Estoque</th>
+                <th className="hidden lg:table-cell">Atualizado</th>
+                <th>Descrição</th>
+                <th className="text-right">Ações</th>
               </tr>
-            )}
-            {loading &&
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  <td className="p-3">
-                    <div className="h-4 w-48 bg-gray-200 rounded" />
-                  </td>
-                  <td className="p-3">
-                    <div className="h-4 w-20 bg-gray-200 rounded" />
-                  </td>
-                  <td className="p-3">
-                    <div className="h-4 w-16 bg-gray-200 rounded" />
-                  </td>
-                  <td className="p-3">
-                    <div className="h-4 w-64 bg-gray-200 rounded" />
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="h-8 w-28 bg-gray-200 rounded ml-auto" />
-                  </td>
-                </tr>
-              ))}
-            {!loading &&
-              items.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="p-3">{p.name}</td>
-                  <td className="p-3">R$ {p.price.toFixed(2)}</td>
-                  <td className="p-3">{p.stock}</td>
-                  <td className="p-3 text-gray-600">{p.description ?? "—"}</td>
-                  <td className="p-3 text-right space-x-2">
-                    <button
-                      className="px-3 py-1 border rounded"
-                      onClick={() => startEdit(p)}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="px-3 py-1 border rounded text-red-600 border-red-600 disabled:opacity-50"
-                      disabled={removingId === p.id}
-                      onClick={() => remove(p.id)}
-                    >
-                      {removingId === p.id ? "Removendo…" : "Remover"}
-                    </button>
+            </thead>
+            <tbody className="[&>tr]:border-t [&>tr]:border-black/5 dark:[&>tr]:border-white/10">
+              {/* estados */}
+              {loading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="p-3"><div className="h-4 w-48 bg-black/10 dark:bg-white/10 rounded" /></td>
+                    <td className="p-3"><div className="h-4 w-20 bg-black/10 dark:bg-white/10 rounded" /></td>
+                    <td className="p-3"><div className="h-4 w-14 bg-black/10 dark:bg-white/10 rounded" /></td>
+                    <td className="p-3 hidden lg:table-cell"><div className="h-4 w-40 bg-black/10 dark:bg-white/10 rounded" /></td>
+                    <td className="p-3"><div className="h-4 w-64 bg-black/10 dark:bg-white/10 rounded" /></td>
+                    <td className="p-3"><div className="h-8 w-28 bg-black/10 dark:bg-white/10 rounded ml-auto" /></td>
+                  </tr>
+                ))}
+
+              {!loading && items.length === 0 && (
+                <tr>
+                  <td className="p-6 text-slate-600 dark:text-slate-300 text-center" colSpan={6}>
+                    Nenhum produto encontrado.
                   </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
+              )}
+
+              {!loading &&
+                items.map((p) => (
+                  <tr key={p.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <td className="p-3 font-medium">{p.name}</td>
+                    <td className="p-3">{formatBRL(p.price)}</td>
+                    <td className="p-3">{p.stock}</td>
+                    <td className="p-3 hidden lg:table-cell text-slate-600 dark:text-slate-300">
+                      {formatDate(p.updatedAt ?? p.createdAt)}
+                    </td>
+                    <td className="p-3 text-slate-600 dark:text-slate-300">
+                      {p.description ?? "—"}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-2">
+                        <button className="btn border border-black/10 dark:border-white/10" onClick={() => startEdit(p)}>
+                          Editar
+                        </button>
+                        <button
+                          className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
+                          disabled={removingId === p.id}
+                          onClick={() => remove(p.id)}
+                        >
+                          {removingId === p.id ? "Removendo…" : "Remover"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* Form de Create/Update */}
-      <section id="product-form" className="border rounded p-4 space-y-3">
-        <h2 className="text-lg font-semibold">
+      <section id="product-form" className="card p-5">
+        <h2 className="text-lg font-semibold mb-4">
           {isEditMode ? "Editar produto" : "Novo produto"}
         </h2>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid sm:grid-cols-2 gap-4"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-sm mb-1">Nome</label>
-            <input
-              className="w-full border rounded p-2"
-              {...register("name")}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
+            <label className="block text-sm mb-1" htmlFor="name">Nome</label>
+            <input id="name" className="input-base" {...register("name")} />
+            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Preço</label>
-            <input
-              className="w-full border rounded p-2"
-              type="number"
-              step="0.01"
-              {...register("price", { valueAsNumber: true })}
-            />
-            {errors.price && (
-              <p className="text-sm text-red-600">{errors.price.message}</p>
-            )}
+            <label className="block text-sm mb-1" htmlFor="price">Preço</label>
+            <input id="price" className="input-base" type="number" step="0.01" {...register("price")} />
+            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Estoque</label>
-            <input
-              className="w-full border rounded p-2"
-              type="number"
-              {...register("stock", { valueAsNumber: true })}
-            />
-            {errors.stock && (
-              <p className="text-sm text-red-600">{errors.stock.message}</p>
-            )}
+            <label className="block text-sm mb-1" htmlFor="stock">Estoque</label>
+            <input id="stock" className="input-base" type="number" {...register("stock")} />
+            {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-sm mb-1">Descrição</label>
-            <textarea
-              className="w-full border rounded p-2"
-              rows={3}
-              {...register("description")}
-            />
+            <label className="block text-sm mb-1" htmlFor="description">Descrição</label>
+            <textarea id="description" className="input-base" rows={3} {...register("description")} />
             {errors.description && (
-              <p className="text-sm text-red-600">
-                {errors.description.message}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>
             )}
           </div>
 
           <div className="sm:col-span-2 flex items-center gap-2">
             <button
               disabled={isSubmitting || saving}
-              className="bg-black text-white px-4 py-2 rounded"
+              className="btn btn-primary"
+              aria-disabled={isSubmitting || saving}
             >
               {isSubmitting || saving
                 ? isEditMode
@@ -362,7 +366,7 @@ export default function AdminProductsPage() {
             {isEditMode && (
               <button
                 type="button"
-                className="border px-4 py-2 rounded"
+                className="btn border border-black/10 dark:border-white/10"
                 onClick={() => {
                   setEditing(null);
                   reset({ name: "", description: "", price: 0, stock: 0 });
