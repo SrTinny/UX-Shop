@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 ---
 
@@ -9,6 +10,16 @@ Ele se comunica com a API backend (NestJS + Prisma) para gerenciar produtos, car
 
 ---
 
+=======
+```markdown
+# 🛒 Frontend - Loja Fullstack
+
+Este é o **frontend** do projeto de e-commerce desenvolvido com **Next.js 14 (App Router)**, **React**, **TypeScript** e **TailwindCSS v4**.  
+Ele se comunica com a API backend (NestJS + Prisma) para gerenciar produtos, carrinho e autenticação de usuários.
+
+---
+
+>>>>>>> 896b4006d3e9065ed09b87b7b32294a6e038e630
 ## 🚀 Tecnologias Utilizadas
 - [Next.js 14](https://nextjs.org/) (App Router, Client Components)
 - [React 18](https://react.dev/)
@@ -134,6 +145,7 @@ http://localhost:3000
 * Carrinho
 * Admin - Produtos (CRUD)
 
+<<<<<<< HEAD
 ---
 
 ## ✅ Requisitos Atendidos
@@ -147,6 +159,8 @@ Este frontend cobre os pontos exigidos no teste de **Desenvolvedor Front-End**:
 * Uso de ferramentas atuais (React, Next.js, Tailwind, Zod, RHF).
 
 ---
+=======
+>>>>>>> 896b4006d3e9065ed09b87b7b32294a6e038e630
 
 ```
 
