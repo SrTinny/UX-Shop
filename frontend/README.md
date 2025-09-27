@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> 5646fed7e6e4b622cb07ffadc9bdf1f4c1fce1bc
----
-
 ```markdown
 # 🛒 Frontend - Loja Fullstack
 
@@ -137,6 +131,19 @@ http://localhost:3000
 * Carrinho
 * Admin - Produtos (CRUD)
 
+---
+
+## ✅ Requisitos Atendidos
+
+Este frontend cobre os pontos exigidos no teste de **Desenvolvedor Front-End**:
+
+* Consumo de API real (CRUD, auth, carrinho).
+* Formulários com validação e máscaras.
+* Padrões de UI/UX modernos.
+* Proteção de rotas.
+* Uso de ferramentas atuais (React, Next.js, Tailwind, Zod, RHF).
+
+---
 
 ```
-
+```
