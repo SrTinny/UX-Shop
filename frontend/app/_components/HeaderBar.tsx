@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
+import clsx from "clsx";
 
 export default function HeaderBar() {
   const [authed, setAuthed] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [ready, setReady] = useState(false);
+  const path = usePathname();
 
   useEffect(() => {
-    // roda só no client
     setAuthed(isAuthenticated());
     setAdmin(isAdmin());
     setReady(true);
@@ -23,52 +25,50 @@ export default function HeaderBar() {
 
   if (!ready) return null;
 
+  const NavLink = ({ href, label }: { href: string; label: string }) => {
+    const active = path.startsWith(href);
+    return (
+      <Link
+        href={href}
+        className={clsx(
+          "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          active
+            ? "bg-brand/10 text-brand"
+            : "text-gray-600 hover:text-brand dark:text-gray-300 dark:hover:text-brand"
+        )}
+      >
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <header className="border-b">
-      <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-3">
-        <Link href="/" className="font-semibold">
+    <header className="border-b bg-white shadow-sm dark:bg-slate-900 dark:border-slate-800">
+      <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
+        {/* Logo */}
+        <Link
+          href="/"
+          className="text-lg font-bold text-brand hover:opacity-90 transition"
+        >
           UX Software
         </Link>
 
-        <nav className="flex items-center gap-3 text-sm">
-          <Link href="/products" className="underline-offset-4 hover:underline">
-            Produtos
-          </Link>
+        {/* Navegação */}
+        <nav className="flex items-center gap-4">
+          <NavLink href="/products" label="Produtos" />
 
-          {authed && (
-            <Link href="/cart" className="underline-offset-4 hover:underline">
-              Carrinho
-            </Link>
-          )}
-
-          {authed && admin && (
-            <Link
-              href="/admin/products"
-              className="underline-offset-4 hover:underline"
-            >
-              Admin
-            </Link>
-          )}
+          {authed && <NavLink href="/cart" label="Carrinho" />}
+          {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
           {!authed ? (
             <>
-              <Link
-                href="/login"
-                className="underline-offset-4 hover:underline"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="underline-offset-4 hover:underline"
-              >
-                Cadastro
-              </Link>
+              <NavLink href="/login" label="Login" />
+              <NavLink href="/register" label="Cadastro" />
             </>
           ) : (
             <button
               onClick={onLogout}
-              className="px-3 py-1 rounded bg-gray-800 text-white"
+              className="px-4 py-2 rounded-md bg-brand text-white hover:bg-accent transition text-sm font-medium"
               title="Sair"
             >
               Sair
