@@ -1,3 +1,4 @@
+// app/register/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,22 +10,22 @@ import axios from "axios";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-/* ===================== Helpers (CPF) ===================== */
-const onlyDigits = (v: string) => (v || "").replace(/\D/g, "");
+/* ===================== Helpers ===================== */
+const digits = (v: string) => (v || "").replace(/\D/g, "");
 
 function isValidCPF(raw: string) {
-  const cpf = onlyDigits(raw);
+  const cpf = digits(raw);
   if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
 
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(cpf[i], 10) * (10 - i);
-  let d1 = 11 - (sum % 11);
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += parseInt(cpf[i], 10) * (10 - i);
+  let d1 = 11 - (s % 11);
   if (d1 >= 10) d1 = 0;
   if (d1 !== parseInt(cpf[9], 10)) return false;
 
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(cpf[i], 10) * (11 - i);
-  let d2 = 11 - (sum % 11);
+  s = 0;
+  for (let i = 0; i < 10; i++) s += parseInt(cpf[i], 10) * (11 - i);
+  let d2 = 11 - (s % 11);
   if (d2 >= 10) d2 = 0;
 
   return d2 === parseInt(cpf[10], 10);
@@ -35,31 +36,37 @@ const schema = z
   .object({
     name: z.string().min(2, "Informe seu nome"),
     email: z.string().email("E-mail inválido"),
-    cpf: z.string().min(11, "CPF inválido"),
-    phone: z.string().min(10, "Telefone inválido"),
+    // transforma para dígitos e valida CPF
+    cpf: z
+      .string()
+      .transform(digits)
+      .refine(isValidCPF, "CPF inválido"),
+    // transforma para dígitos e valida tamanho (10 a 11)
+    phone: z
+      .string()
+      .transform(digits)
+      .refine((v) => v.length >= 10 && v.length <= 11, "Telefone inválido"),
     password: z.string().min(6, "Mínimo 6 caracteres"),
     confirm: z.string().min(6, "Confirme a senha"),
   })
   .refine((d) => d.password === d.confirm, {
-    message: "Senhas não conferem",
     path: ["confirm"],
+    message: "Senhas não conferem",
   });
 
 type FormData = z.infer<typeof schema>;
 
-/* Mock de CPF duplicado em localStorage */
-function isCpfDuplicatedMock(cpfMasked: string) {
+/* =============== Mock de CPF duplicado (apenas DEV) =============== */
+function isCpfDuplicatedMock(cpfDigits: string) {
   const key = "cpfs_mock";
   const list: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
-  const digits = onlyDigits(cpfMasked);
-  return list.includes(digits);
+  return list.includes(cpfDigits);
 }
-function addCpfMock(cpfMasked: string) {
+function addCpfMock(cpfDigits: string) {
   const key = "cpfs_mock";
   const list: string[] = JSON.parse(localStorage.getItem(key) ?? "[]");
-  const digits = onlyDigits(cpfMasked);
-  if (!list.includes(digits)) {
-    localStorage.setItem(key, JSON.stringify([...list, digits]));
+  if (!list.includes(cpfDigits)) {
+    localStorage.setItem(key, JSON.stringify([...list, cpfDigits]));
   }
 }
 
@@ -71,6 +78,7 @@ export default function RegisterPage() {
     control,
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -87,14 +95,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setError(null);
 
-    if (!isValidCPF(data.cpf)) {
-      const msg = "CPF inválido";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
+    // `data.cpf` e `data.phone` já vêm só com dígitos por causa do transform()
+    const cpfDigits = data.cpf;
+    const phoneDigits = data.phone;
 
-    if (isCpfDuplicatedMock(data.cpf)) {
+    // Mock de CPF duplicado apenas em desenvolvimento
+    if (process.env.NODE_ENV !== "production" && isCpfDuplicatedMock(cpfDigits)) {
       const msg = "CPF já cadastrado (simulado)";
       setError(msg);
       toast.error(msg);
@@ -106,16 +112,23 @@ export default function RegisterPage() {
         name: data.name,
         email: data.email,
         password: data.password,
+        cpf: cpfDigits,
+        phone: phoneDigits,
       });
 
-      addCpfMock(data.cpf);
+      if (process.env.NODE_ENV !== "production") {
+        addCpfMock(cpfDigits);
+      }
 
       toast.success("Cadastro criado! Verifique o link de ativação no console do backend.");
+      reset();
       window.location.href = "/login";
     } catch (e: unknown) {
       let msg = "Erro ao registrar";
       if (axios.isAxiosError(e)) {
         msg = e.response?.data?.message ?? e.message ?? msg;
+        // Ex.: backend pode retornar 409 para duplicidade de e-mail/CPF
+        // if (e.response?.status === 409) msg = "CPF ou e-mail já cadastrado";
       } else if (e instanceof Error) {
         msg = e.message;
       }
@@ -157,7 +170,9 @@ export default function RegisterPage() {
               aria-describedby={errors.name ? "name-err" : undefined}
             />
             {errors.name && (
-              <p id="name-err" className="text-sm text-red-600">{errors.name.message}</p>
+              <p id="name-err" className="text-sm text-red-600">
+                {errors.name.message}
+              </p>
             )}
           </div>
 
@@ -168,13 +183,16 @@ export default function RegisterPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               className="input-base"
               {...register("email")}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-err" : undefined}
             />
             {errors.email && (
-              <p id="email-err" className="text-sm text-red-600">{errors.email.message}</p>
+              <p id="email-err" className="text-sm text-red-600">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -195,13 +213,17 @@ export default function RegisterPage() {
                   onBlur={field.onBlur}
                   className="input-base"
                   placeholder="000.000.000-00"
+                  inputMode="numeric"
+                  autoComplete="off"
                   aria-invalid={!!errors.cpf}
                   aria-describedby={errors.cpf ? "cpf-err" : undefined}
                 />
               )}
             />
             {errors.cpf && (
-              <p id="cpf-err" className="text-sm text-red-600">{errors.cpf.message}</p>
+              <p id="cpf-err" className="text-sm text-red-600">
+                {errors.cpf.message}
+              </p>
             )}
           </div>
 
@@ -215,20 +237,24 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <IMaskInput
                   id="phone"
-                  mask="(00) 0 0000-0000"
+                  mask="(00) 00000-0000"
                   value={field.value}
                   onAccept={(val) => field.onChange(val)}
                   inputRef={field.ref}
                   onBlur={field.onBlur}
                   className="input-base"
-                  placeholder="(00) 0 0000-0000"
+                  placeholder="(00) 00000-0000"
+                  inputMode="tel"
+                  autoComplete="tel"
                   aria-invalid={!!errors.phone}
                   aria-describedby={errors.phone ? "phone-err" : undefined}
                 />
               )}
             />
             {errors.phone && (
-              <p id="phone-err" className="text-sm text-red-600">{errors.phone.message}</p>
+              <p id="phone-err" className="text-sm text-red-600">
+                {errors.phone.message}
+              </p>
             )}
           </div>
 
@@ -246,7 +272,9 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
             {errors.password && (
-              <p id="password-err" className="text-sm text-red-600">{errors.password.message}</p>
+              <p id="password-err" className="text-sm text-red-600">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
@@ -264,7 +292,9 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
             {errors.confirm && (
-              <p id="confirm-err" className="text-sm text-red-600">{errors.confirm.message}</p>
+              <p id="confirm-err" className="text-sm text-red-600">
+                {errors.confirm.message}
+              </p>
             )}
           </div>
 
