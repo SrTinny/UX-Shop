@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { toast } from 'sonner';
 
+/* ===================== Tipos ===================== */
 type Product = {
   id: string;
   name: string;
@@ -15,20 +16,47 @@ type Product = {
   stock: number;
 };
 
-const formatBRL = (v: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(v);
+type ProductsResponse = { items?: Product[] };
 
+/* ===================== Utils ===================== */
+const formatBRL = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+function clsx(...args: (string | false | undefined)[]) {
+  return args.filter(Boolean).join(' ');
+}
+
+/** destaca o termo da busca no nome do produto */
+function highlight(text: string, term: string) {
+  if (!term) return text;
+  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${safe})`, 'ig');
+  const parts = text.split(re);
+  return parts.map((p, i) =>
+    re.test(p) ? (
+      <mark key={i} className="bg-brand/20 text-brand rounded px-0.5">
+        {p}
+      </mark>
+    ) : (
+      <span key={i}>{p}</span>
+    ),
+  );
+}
+
+/* ===================== Página ===================== */
 export default function ProductsPage() {
   const [ready, setReady] = useState(false);
 
-  // produtos
+  // listagem
   const [items, setItems] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // paginação simples
+  const PER_PAGE = 20;
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   // carrinho (badge)
   const [cartQty, setCartQty] = useState<number>(0);
@@ -37,8 +65,9 @@ export default function ProductsPage() {
   // botão adicionar
   const [addingId, setAddingId] = useState<string | null>(null);
 
-  // debounce
+  // debounce + cancelamento
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // guarda de auth
   useEffect(() => {
@@ -49,38 +78,66 @@ export default function ProductsPage() {
     }
   }, []);
 
-  async function fetchProducts(term?: string) {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await api.get('/products', {
-        params: { page: 1, perPage: 20, search: term || undefined },
-      });
-      const data = res.data as { items?: Product[] };
-      const list = data.items ?? [];
-      setItems(list);
+  const fetchProducts = useCallback(
+    async (opts: { term?: string; page?: number; append?: boolean } = {}) => {
+      const { term = search.trim(), page = 1, append = false } = opts;
 
-      if (list.length === 0 && (term?.length ?? 0) > 0) {
-        toast.info('Nenhum produto encontrado para sua busca.');
-      }
-    } catch (e: unknown) {
-      let msg = 'Erro ao carregar produtos';
-      if (axios.isAxiosError(e)) {
-        msg =
-          (e.response?.data as { message?: string } | undefined)?.message ??
-          e.message ??
-          msg;
-      } else if (e instanceof Error) {
-        msg = e.message;
-      }
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
+      // cancela requisição anterior
+      if (abortRef.current) abortRef.current.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
 
-  async function fetchCartQty() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await api.get<ProductsResponse>('/products', {
+          params: { page, perPage: PER_PAGE, search: term || undefined },
+          signal: ctrl.signal as AbortSignal,
+        });
+
+        const list = res.data.items ?? [];
+        setHasMore(list.length === PER_PAGE);
+
+        if (append) {
+          setItems((prev) => [...prev, ...list]);
+        } else {
+          setItems(list);
+        }
+
+        // UX: feedback quando a busca não retorna
+        if (page === 1 && list.length === 0 && term.length > 0) {
+          toast.info('Nenhum produto encontrado para sua busca.');
+        }
+      } catch (e: unknown) {
+        if (axios.isAxiosError(e)) {
+          if (e.code === 'ERR_CANCELED') return; // usuário digitou novamente
+          if (e.response?.status === 401) {
+            toast.error('Sessão expirada. Faça login novamente.');
+            window.location.href = '/login';
+            return;
+          }
+          const msg =
+            (e.response?.data as { message?: string } | undefined)?.message ??
+            e.message ??
+            'Erro ao carregar produtos';
+          setError(msg);
+          toast.error(msg);
+        } else if (e instanceof Error) {
+          setError(e.message);
+          toast.error(e.message);
+        } else {
+          setError('Erro ao carregar produtos');
+          toast.error('Erro ao carregar produtos');
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search],
+  );
+
+  const fetchCartQty = useCallback(async () => {
     try {
       setCartLoading(true);
       const res = await api.get('/cart');
@@ -94,29 +151,36 @@ export default function ProductsPage() {
     } finally {
       setCartLoading(false);
     }
-  }
+  }, []);
 
   // carga inicial
   useEffect(() => {
     if (!ready) return;
-    void fetchProducts();
+    void fetchProducts({ page: 1 });
     void fetchCartQty();
-  }, [ready]);
+  }, [ready, fetchProducts, fetchCartQty]);
 
-  // debounce da busca
+  // debounce da busca (reseta paginação)
   useEffect(() => {
     if (!ready) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      void fetchProducts(search.trim());
+      setPage(1);
+      void fetchProducts({ term: search.trim(), page: 1 });
     }, 450);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, ready]);
+  }, [search, ready, fetchProducts]);
+
+  async function loadMore() {
+    const next = page + 1;
+    setPage(next);
+    await fetchProducts({ term: search.trim(), page: next, append: true });
+  }
 
   async function addToCart(productId: string) {
-    // update otimista: sobe badge já
+    // update otimista do badge
     const prev = cartQty;
     setCartQty((q) => q + 1);
 
@@ -147,16 +211,20 @@ export default function ProductsPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-6">
-      {/* Top bar local da página (o Header global já está no layout) */}
+      {/* Top bar local */}
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Produtos</h1>
+        <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
 
         <Link
           href="/cart"
           className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-brand/10 text-brand hover:bg-brand/15 transition"
+          aria-label="Ir para o carrinho"
         >
           Meu carrinho
-          <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white text-xs">
+          <span
+            className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white text-xs"
+            aria-live="polite"
+          >
             {cartLoading ? '…' : cartQty}
           </span>
         </Link>
@@ -167,7 +235,8 @@ export default function ProductsPage() {
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void fetchProducts(search.trim()); // força buscar sem esperar o debounce
+          setPage(1);
+          void fetchProducts({ term: search.trim(), page: 1 });
         }}
       >
         <div className="relative flex-1">
@@ -178,6 +247,7 @@ export default function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Buscar produtos por nome"
           />
+          {/* ícone */}
           <svg
             aria-hidden
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
@@ -197,6 +267,7 @@ export default function ProductsPage() {
           disabled={loading}
           className="btn btn-primary"
           title="Buscar"
+          aria-busy={loading}
         >
           {loading ? 'Buscando…' : 'Buscar'}
         </button>
@@ -214,10 +285,10 @@ export default function ProductsPage() {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i} className="card p-4 animate-pulse">
-              <div className="h-4 w-3/5 bg-gray-200 rounded mb-2" />
-              <div className="h-3 w-full bg-gray-200 rounded mb-2" />
-              <div className="h-3 w-2/3 bg-gray-200 rounded mb-4" />
-              <div className="h-9 w-28 bg-gray-200 rounded" />
+              <div className="h-4 w-3/5 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+              <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+              <div className="h-3 w-2/3 bg-slate-200 dark:bg-slate-800 rounded mb-4" />
+              <div className="h-9 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
             </li>
           ))}
         </ul>
@@ -226,7 +297,7 @@ export default function ProductsPage() {
       {/* Estado vazio */}
       {!loading && !error && !hasResults && (
         <div className="card p-8 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Nenhum produto encontrado. Tente outra busca.
           </p>
         </div>
@@ -234,52 +305,61 @@ export default function ProductsPage() {
 
       {/* Lista */}
       {!loading && hasResults && (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((p) => (
-            <li key={p.id} className="card p-4 flex flex-col gap-3">
-              <div className="flex-1 min-h-20">
-                <h3 className="font-medium">{p.name}</h3>
-                {p.description && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                    {p.description}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <div className="font-semibold">{formatBRL(p.price)}</div>
-                  <div
-                    className={clsx(
-                      'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
-                      p.stock > 0
-                        ? 'bg-accent/10 text-accent'
-                        : 'bg-gray-200 text-gray-600',
-                    )}
-                    title={`Estoque: ${p.stock}`}
-                  >
-                    {p.stock > 0 ? `Estoque: ${p.stock}` : 'Sem estoque'}
-                  </div>
+        <>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((p) => (
+              <li key={p.id} className="card p-4 flex flex-col gap-3">
+                <div className="flex-1 min-h-20">
+                  <h3 className="font-medium">{highlight(p.name, search.trim())}</h3>
+                  {p.description && (
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                      {p.description}
+                    </p>
+                  )}
                 </div>
 
-                <button
-                  disabled={p.stock <= 0 || addingId === p.id}
-                  onClick={() => addToCart(p.id)}
-                  className="btn btn-primary disabled:opacity-60"
-                  title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
-                >
-                  {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <div className="font-semibold">{formatBRL(p.price)}</div>
+                    <div
+                      className={clsx(
+                        'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
+                        p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
+                      )}
+                      title={`Estoque: ${p.stock}`}
+                    >
+                      {p.stock > 0 ? `Estoque: ${p.stock}` : 'Sem estoque'}
+                    </div>
+                  </div>
+
+                  <button
+                    disabled={p.stock <= 0 || addingId === p.id}
+                    onClick={() => addToCart(p.id)}
+                    className="btn btn-primary disabled:opacity-60"
+                    title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
+                    aria-disabled={p.stock <= 0 || addingId === p.id}
+                  >
+                    {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Paginação / Carregar mais */}
+          {hasMore && (
+            <div className="flex justify-center">
+              <button
+                onClick={loadMore}
+                className="btn border border-black/10 dark:border-white/10 mt-2"
+                disabled={loading}
+              >
+                {loading ? 'Carregando…' : 'Carregar mais'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );
-}
-
-/** util: clsx simples pra não adicionar a lib */
-function clsx(...args: (string | false | undefined)[]) {
-  return args.filter(Boolean).join(' ');
 }
