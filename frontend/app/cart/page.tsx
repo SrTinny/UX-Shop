@@ -157,27 +157,32 @@ export default function CartPage() {
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
       <header className="flex items-center justify-between pb-4 border-b">
-        <h1 className="text-2xl font-semibold">Meu carrinho</h1>
+        <h1 className="text-2xl font-semibold text-brand">Meu carrinho</h1>
         <div className="flex items-center gap-3">
-          <a className="text-sm underline" href="/products">
+          <a className="text-sm underline text-accent hover:text-brand" href="/products">
             Voltar aos produtos
           </a>
           <span className="inline-flex items-center gap-2 text-sm">
             Itens:
-            <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-black text-white">
+            <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white">
               {totalQty}
             </span>
           </span>
           <button
             onClick={handleLogout}
-            className="text-sm bg-gray-800 text-white px-3 py-1 rounded"
+            className="btn btn-accent px-3 py-1 h-8"
+            title="Encerrar sessão"
           >
             Sair
           </button>
         </div>
       </header>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && (
+        <p className="text-red-600 text-sm" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
 
       {/* SKELETON */}
       {loading && (
@@ -185,18 +190,18 @@ export default function CartPage() {
           {Array.from({ length: 3 }).map((_, i) => (
             <li
               key={i}
-              className="border rounded p-3 flex items-center justify-between gap-4 animate-pulse"
+              className="card p-3 flex items-center justify-between gap-4 animate-pulse"
             >
               <div className="min-w-0 flex-1">
-                <div className="h-4 w-48 bg-gray-200 rounded mb-2" />
-                <div className="h-3 w-64 bg-gray-200 rounded mb-2" />
-                <div className="h-3 w-40 bg-gray-200 rounded" />
+                <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+                <div className="h-3 w-64 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+                <div className="h-3 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 bg-gray-200 rounded" />
-                <div className="h-8 w-16 bg-gray-200 rounded" />
-                <div className="h-8 w-8 bg-gray-200 rounded" />
-                <div className="h-8 w-20 bg-gray-200 rounded" />
+                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
               </div>
             </li>
           ))}
@@ -204,7 +209,9 @@ export default function CartPage() {
       )}
 
       {!loading && cart && cart.items.length === 0 && (
-        <p className="text-sm text-gray-600">Seu carrinho está vazio.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Seu carrinho está vazio.
+        </p>
       )}
 
       {!loading && cart && cart.items.length > 0 && (
@@ -213,17 +220,17 @@ export default function CartPage() {
             {cart.items.map((it) => {
               const disabledRow = savingId === it.id || removingId === it.id;
               return (
-                <li
-                  key={it.id}
-                  className="border rounded p-3 flex items-center justify-between gap-4"
-                >
+                <li key={it.id} className="card p-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{it.product.name}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
                       Preço: R$ {it.product.price.toFixed(2)} · Estoque: {it.product.stock}
                     </div>
                     <div className="text-sm mt-1">
-                      Subtotal: R$ {(it.product.price * it.quantity).toFixed(2)}
+                      Subtotal:{' '}
+                      <span className="font-medium text-brand">
+                        R$ {(it.product.price * it.quantity).toFixed(2)}
+                      </span>
                     </div>
                   </div>
 
@@ -231,8 +238,9 @@ export default function CartPage() {
                     <button
                       onClick={() => updateQty(it, it.quantity - 1)}
                       disabled={disabledRow || it.quantity <= 1}
-                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      className="btn h-8 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
                       title="Diminuir"
+                      aria-label={`Diminuir quantidade de ${it.product.name}`}
                     >
                       −
                     </button>
@@ -246,15 +254,17 @@ export default function CartPage() {
                         const next = Number(e.target.value);
                         if (Number.isFinite(next)) updateQty(it, next);
                       }}
-                      className="w-16 text-center border rounded p-1"
+                      className="input-base w-20 text-center"
                       disabled={disabledRow}
+                      aria-label={`Quantidade de ${it.product.name}`}
                     />
 
                     <button
                       onClick={() => updateQty(it, it.quantity + 1)}
                       disabled={disabledRow || it.quantity >= it.product.stock}
-                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      className="btn h-8 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
                       title="Aumentar"
+                      aria-label={`Aumentar quantidade de ${it.product.name}`}
                     >
                       +
                     </button>
@@ -262,7 +272,7 @@ export default function CartPage() {
                     <button
                       onClick={() => removeItem(it.id)}
                       disabled={disabledRow}
-                      className="px-3 py-1 border rounded text-red-600 border-red-600 disabled:opacity-50"
+                      className="btn h-8 px-3 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                       title="Remover item"
                     >
                       Remover
@@ -274,14 +284,22 @@ export default function CartPage() {
           </ul>
 
           <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-lg font-semibold">Total: R$ {total.toFixed(2)}</div>
+            <div className="text-lg font-semibold">
+              Total:{' '}
+              <span className="text-brand">R$ {total.toFixed(2)}</span>
+            </div>
             <div className="flex gap-2">
-              <button onClick={clearCart} className="border px-4 py-2 rounded">
+              <button
+                onClick={clearCart}
+                className="btn border border-accent text-accent hover:bg-accent hover:text-white"
+                title="Limpar todos os itens do carrinho"
+              >
                 Limpar carrinho
               </button>
               <button
                 onClick={() => toast.info('Fluxo de checkout (futuro)')}
-                className="bg-black text-white px-4 py-2 rounded"
+                className="btn btn-primary"
+                title="Ir para o checkout"
               >
                 Finalizar
               </button>
