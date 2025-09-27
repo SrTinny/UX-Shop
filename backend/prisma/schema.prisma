@@ -30,9 +30,11 @@ model User {
 model Product {
   id          String     @id @default(uuid())
   name        String
+  slug        String     @unique      // <- chave única p/ upsert/skipDuplicates
   description String?
   price       Float
   stock       Int        @default(0)
+  imageUrl    String?
   cartItems   CartItem[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
