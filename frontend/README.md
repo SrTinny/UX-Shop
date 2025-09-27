@@ -1,36 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+```markdown
+# 🛒 Frontend - Loja Fullstack
 
-## Getting Started
+Este é o **frontend** do projeto de e-commerce desenvolvido com **Next.js 14 (App Router)**, **React**, **TypeScript** e **TailwindCSS v4**.  
+Ele se comunica com a API backend (NestJS + Prisma) para gerenciar produtos, carrinho e autenticação de usuários.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Tecnologias Utilizadas
+- [Next.js 14](https://nextjs.org/) (App Router, Client Components)
+- [React 18](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [TailwindCSS v4](https://tailwindcss.com/) (com paleta customizada)
+- [Axios](https://axios-http.com/) (requisições HTTP)
+- [React Hook Form](https://react-hook-form.com/) (controle de formulários)
+- [Zod](https://zod.dev/) (validação de dados)
+- [IMask](https://imask.js.org/) (máscaras de CPF/telefone)
+- [Sonner](https://sonner.emilkowal.ski/) (notificações/toasts)
+
+---
+
+## 📂 Estrutura de Pastas (principais)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+frontend/
+├── app/
+│   ├── login/           → página de login
+│   ├── register/        → página de registro
+│   ├── products/        → listagem de produtos (cliente)
+│   ├── cart/            → carrinho de compras
+│   └── admin/products/  → CRUD de produtos (admin)
+├── lib/
+│   ├── api.ts           → configuração do Axios
+│   └── auth.ts          → helpers de autenticação
+├── styles/
+│   └── globals.css      → estilos globais (Tailwind)
+└── tailwind.config.ts   → customização de cores e tema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+````
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## ⚙️ Funcionalidades Implementadas
+### 👤 Autenticação
+- Login e logout com JWT.
+- Registro de novos usuários.
+- Redirecionamento automático se o usuário não estiver autenticado.
+- Proteção de rotas administrativas.
 
-To learn more about Next.js, take a look at the following resources:
+### 🛒 Loja (usuário)
+- Listagem de produtos com busca e paginação.
+- Busca com **debounce** e botão "Buscar".
+- Skeleton loading enquanto carrega.
+- Adição de produtos ao carrinho com atualização otimista do badge.
+- Página de carrinho mostrando itens e quantidades.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🛠️ Admin
+- CRUD completo de produtos:
+  - Criar, editar, remover.
+  - Formulário validado com **React Hook Form + Zod**.
+  - `z.coerce.number()` para validar preço/estoque como números.
+  - Cancelar edição e reset automático.
+- Tabela com skeleton enquanto carrega.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 📝 Registro
+- Formulário com os campos:
+  - Nome, e-mail, CPF, telefone, senha e confirmação de senha.
+- Máscaras de CPF e telefone com **IMask**.
+- Validação avançada:
+  - CPF válido.
+  - Senhas iguais.
+  - E-mail válido.
+  - Telefone com dígitos suficientes.
+- Simulação de CPF duplicado usando `localStorage`.
 
-## Deploy on Vercel
+### 🎨 UI/UX
+- TailwindCSS v4 com **paleta customizada** (`brand`, `accent`, `neutral`).
+- Classes globais (`btn`, `btn-primary`, `input-base`, `card`).
+- Layout responsivo com grid/flex.
+- Feedback imediato com toasts (`sonner`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ▶️ Como Rodar o Projeto
+
+### Pré-requisitos
+- Node.js (>= 18)
+- npm ou yarn
+- Backend rodando em paralelo ([link para o repositório do backend](../backend))
+
+### Passos
+```bash
+# Clonar o repositório
+git clone <url-do-repo>
+cd frontend
+
+# Instalar dependências
+npm install
+
+# Configurar variáveis de ambiente
+cp .env.example .env.local
+# Edite o arquivo e defina a URL da API, ex:
+# NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Rodar o servidor de desenvolvimento
+npm run dev
+
+# Acessar no navegador
+http://localhost:3000
+````
+
+---
+
+## 🔑 Usuários de Teste
+
+* **Admin**
+
+  * Email: `admin@example.com`
+  * Senha: `123456`
+* **Cliente**
+
+  * Email: `user@example.com`
+  * Senha: `123456`
+
+---
+
+## 📸 Telas
+
+* Login / Registro
+* Produtos (cliente)
+* Carrinho
+* Admin - Produtos (CRUD)
+
+
+```
+
