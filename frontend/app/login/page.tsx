@@ -16,13 +16,12 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
     setError(null);
@@ -50,50 +49,63 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Login</h1>
+    <main className="min-h-screen flex items-center justify-center px-4">
+      <div className="card w-full max-w-md p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center text-brand">Login</h1>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-sm text-center" role="alert" aria-live="polite">
+            {error}
+          </p>
+        )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <div>
-          <label className="block text-sm mb-1">E-mail</label>
-          <input
-            className="w-full border rounded p-2"
-            type="email"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-sm text-red-600">{errors.email.message}</p>
-          )}
-        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
+              E-mail
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              {...register("email")}
+              className="input-base"
+            />
+            {errors.email && (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm mb-1">Senha</label>
-          <input
-            className="w-full border rounded p-2"
-            type="password"
-            {...register("password")}
-          />
-          {errors.password && (
-            <p className="text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium mb-1">
+              Senha
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              {...register("password")}
+              className="input-base"
+            />
+            {errors.password && (
+              <p className="text-sm text-red-600">{errors.password.message}</p>
+            )}
+          </div>
 
-        <button
-          disabled={isSubmitting}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          {isSubmitting ? "Entrando..." : "Entrar"}
-        </button>
-      </form>
+          <button disabled={isSubmitting} className="btn btn-primary w-full">
+            {isSubmitting ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
 
-      <p className="text-sm">
-        Não tem conta?{" "}
-        <a className="underline" href="/register">
-          Cadastre-se
-        </a>
-      </p>
+        <p className="text-sm text-center text-gray-600">
+          Não tem conta?{" "}
+          <a className="underline text-accent hover:text-brand" href="/register">
+            Cadastre-se
+          </a>
+        </p>
+      </div>
     </main>
   );
 }
