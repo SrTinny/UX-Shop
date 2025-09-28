@@ -17,6 +17,7 @@ type Product = {
   stock: number;
   createdAt?: string;
   updatedAt?: string;
+  imageUrl?: string | null;
 };
 
 /** Validação: z.coerce.number transforma string -> number automaticamente */
@@ -24,13 +25,19 @@ const productSchema = z.object({
   name: z.string().min(1, "Nome obrigatório"),
   description: z.string().optional(),
   price: z.coerce.number().nonnegative("Preço inválido"),
-  stock: z.coerce.number().int("Estoque deve ser inteiro").nonnegative("Estoque inválido"),
+  stock: z.coerce
+    .number()
+    .int("Estoque deve ser inteiro")
+    .nonnegative("Estoque inválido"),
+  imageUrl: z.string().url("URL inválida").optional(),
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
 /* ===== Helpers ===== */
 const formatBRL = (n: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    n
+  );
 
 const formatDate = (iso?: string) => {
   if (!iso) return "—";
@@ -72,8 +79,16 @@ export default function AdminProductsPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormData>,
-    defaultValues: { name: "", description: "", price: 0, stock: 0 },
+    resolver: zodResolver(
+      productSchema
+    ) as unknown as Resolver<ProductFormData>,
+    defaultValues: {
+      name: "",
+      description: "",
+      price: 0,
+      stock: 0,
+      imageUrl: "",
+    },
   });
 
   // Debounce da busca
@@ -81,7 +96,10 @@ export default function AdminProductsPage() {
   const debounceRef = useRef<number | null>(null);
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    debounceRef.current = window.setTimeout(
+      () => setDebouncedSearch(search.trim()),
+      400
+    );
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
@@ -121,7 +139,9 @@ export default function AdminProductsPage() {
   function startCreate() {
     setEditing(null);
     reset({ name: "", description: "", price: 0, stock: 0 });
-    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("product-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function startEdit(p: Product) {
@@ -131,8 +151,11 @@ export default function AdminProductsPage() {
       description: p.description ?? "",
       price: p.price,
       stock: p.stock,
+      imageUrl: p.imageUrl ?? "",
     });
-    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("product-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
@@ -201,13 +224,18 @@ export default function AdminProductsPage() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-brand">Admin • Produtos</h1>
+          <h1 className="text-2xl font-semibold text-brand">
+            Admin • Produtos
+          </h1>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Gerencie catálogo, preços e estoque.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <a className="btn border border-black/10 dark:border-white/10" href="/products">
+          <a
+            className="btn border border-black/10 dark:border-white/10"
+            href="/products"
+          >
             Loja
           </a>
           <button onClick={handleLogout} className="btn btn-accent">
@@ -233,7 +261,10 @@ export default function AdminProductsPage() {
           <button onClick={load} className="btn btn-primary whitespace-nowrap">
             {loading ? "Buscando…" : "Buscar"}
           </button>
-          <button onClick={startCreate} className="btn border border-black/10 dark:border-white/10">
+          <button
+            onClick={startCreate}
+            className="btn border border-black/10 dark:border-white/10"
+          >
             Novo produto
           </button>
         </div>
@@ -265,18 +296,33 @@ export default function AdminProductsPage() {
               {loading &&
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="p-3"><div className="h-4 w-48 bg-black/10 dark:bg-white/10 rounded" /></td>
-                    <td className="p-3"><div className="h-4 w-20 bg-black/10 dark:bg-white/10 rounded" /></td>
-                    <td className="p-3"><div className="h-4 w-14 bg-black/10 dark:bg-white/10 rounded" /></td>
-                    <td className="p-3 hidden lg:table-cell"><div className="h-4 w-40 bg-black/10 dark:bg-white/10 rounded" /></td>
-                    <td className="p-3"><div className="h-4 w-64 bg-black/10 dark:bg-white/10 rounded" /></td>
-                    <td className="p-3"><div className="h-8 w-28 bg-black/10 dark:bg-white/10 rounded ml-auto" /></td>
+                    <td className="p-3">
+                      <div className="h-4 w-48 bg-black/10 dark:bg-white/10 rounded" />
+                    </td>
+                    <td className="p-3">
+                      <div className="h-4 w-20 bg-black/10 dark:bg-white/10 rounded" />
+                    </td>
+                    <td className="p-3">
+                      <div className="h-4 w-14 bg-black/10 dark:bg-white/10 rounded" />
+                    </td>
+                    <td className="p-3 hidden lg:table-cell">
+                      <div className="h-4 w-40 bg-black/10 dark:bg-white/10 rounded" />
+                    </td>
+                    <td className="p-3">
+                      <div className="h-4 w-64 bg-black/10 dark:bg-white/10 rounded" />
+                    </td>
+                    <td className="p-3">
+                      <div className="h-8 w-28 bg-black/10 dark:bg-white/10 rounded ml-auto" />
+                    </td>
                   </tr>
                 ))}
 
               {!loading && items.length === 0 && (
                 <tr>
-                  <td className="p-6 text-slate-600 dark:text-slate-300 text-center" colSpan={6}>
+                  <td
+                    className="p-6 text-slate-600 dark:text-slate-300 text-center"
+                    colSpan={6}
+                  >
                     Nenhum produto encontrado.
                   </td>
                 </tr>
@@ -284,7 +330,10 @@ export default function AdminProductsPage() {
 
               {!loading &&
                 items.map((p) => (
-                  <tr key={p.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <tr
+                    key={p.id}
+                    className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
                     <td className="p-3 font-medium">{p.name}</td>
                     <td className="p-3">{formatBRL(p.price)}</td>
                     <td className="p-3">{p.stock}</td>
@@ -296,7 +345,10 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <button className="btn border border-black/10 dark:border-white/10" onClick={() => startEdit(p)}>
+                        <button
+                          className="btn border border-black/10 dark:border-white/10"
+                          onClick={() => startEdit(p)}
+                        >
                           Editar
                         </button>
                         <button
@@ -321,30 +373,87 @@ export default function AdminProductsPage() {
           {isEditMode ? "Editar produto" : "Novo produto"}
         </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="grid sm:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid sm:grid-cols-2 gap-4"
+        >
           <div className="sm:col-span-2">
-            <label className="block text-sm mb-1" htmlFor="name">Nome</label>
+            <label className="block text-sm mb-1" htmlFor="name">
+              Nome
+            </label>
             <input id="name" className="input-base" {...register("name")} />
-            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm mb-1" htmlFor="price">Preço</label>
-            <input id="price" className="input-base" type="number" step="0.01" {...register("price")} />
-            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price.message}</p>}
+            <label className="block text-sm mb-1" htmlFor="price">
+              Preço
+            </label>
+            <input
+              id="price"
+              className="input-base"
+              type="number"
+              step="0.01"
+              {...register("price")}
+            />
+            {errors.price && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.price.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm mb-1" htmlFor="stock">Estoque</label>
-            <input id="stock" className="input-base" type="number" {...register("stock")} />
-            {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
+            <label className="block text-sm mb-1" htmlFor="stock">
+              Estoque
+            </label>
+            <input
+              id="stock"
+              className="input-base"
+              type="number"
+              {...register("stock")}
+            />
+            {errors.stock && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.stock.message}
+              </p>
+            )}
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-sm mb-1" htmlFor="description">Descrição</label>
-            <textarea id="description" className="input-base" rows={3} {...register("description")} />
+            <label className="block text-sm mb-1" htmlFor="description">
+              Descrição
+            </label>
+            <textarea
+              id="description"
+              className="input-base"
+              rows={3}
+              {...register("description")}
+            />
             {errors.description && (
-              <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-sm mb-1" htmlFor="imageUrl">
+              Link da imagem
+            </label>
+            <input
+              id="imageUrl"
+              className="input-base"
+              type="url"
+              placeholder="https://exemplo.com/imagem.jpg"
+              {...register("imageUrl")}
+            />
+            {errors.imageUrl && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.imageUrl.message}
+              </p>
             )}
           </div>
 
