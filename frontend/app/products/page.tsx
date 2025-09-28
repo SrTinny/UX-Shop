@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // 👈 adicionado
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
@@ -14,6 +15,7 @@ type Product = {
   description?: string | null;
   price: number;
   stock: number;
+  imageUrl?: string | null; // 👈 adicionado
 };
 
 type ProductsResponse = { items?: Product[] };
@@ -285,6 +287,7 @@ export default function ProductsPage() {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i} className="card p-4 animate-pulse">
+              <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 rounded mb-3" />
               <div className="h-4 w-3/5 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
               <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded mb-2" />
               <div className="h-3 w-2/3 bg-slate-200 dark:bg-slate-800 rounded mb-4" />
@@ -309,6 +312,19 @@ export default function ProductsPage() {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((p) => (
               <li key={p.id} className="card p-4 flex flex-col gap-3">
+                {/* Imagem */}
+                <div className="relative w-full aspect-[3/2] overflow-hidden rounded-xl bg-black/5">
+                  <Image
+                    src={p.imageUrl ?? '/placeholder.png'}
+                    alt={p.name}
+                    fill
+                    sizes="(max-width:768px) 100vw, (max-width:1024px) 50vw, 33vw"
+                    className="object-cover"
+                    // unoptimized // <- descomente para testar sem otimização
+                  />
+                </div>
+
+                {/* Texto */}
                 <div className="flex-1 min-h-20">
                   <h3 className="font-medium">{highlight(p.name, search.trim())}</h3>
                   {p.description && (
@@ -324,7 +340,9 @@ export default function ProductsPage() {
                     <div
                       className={clsx(
                         'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
-                        p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
+                        p.stock > 0
+                          ? 'bg-accent/10 text-accent'
+                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
                       )}
                       title={`Estoque: ${p.stock}`}
                     >
