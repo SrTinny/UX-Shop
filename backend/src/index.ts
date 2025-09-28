@@ -17,13 +17,12 @@ app.use(express.json())
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://ux-software.vercel.app',           // <- seu domínio no Vercel
-  process.env.FRONTEND_URL || '',             // <- opcional: ler de env
+  'https://ux-software.vercel.app',
+  process.env.FRONTEND_URL || '',
 ].filter(Boolean)
 
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
-    // permite requests sem Origin (ex.: curl, healthchecks)
     if (!origin) return cb(null, true)
     if (allowedOrigins.includes(origin)) return cb(null, true)
     return cb(new Error(`Origin not allowed by CORS: ${origin}`))
@@ -34,9 +33,6 @@ const corsOptions: CorsOptions = {
 }
 
 app.use(cors(corsOptions))
-// responde preflight para qualquer rota
-app.options('*', cors(corsOptions))
-/* ================================= */
 
 /* Rotas públicas */
 app.use('/auth', authRoutes)
