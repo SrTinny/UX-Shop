@@ -1,18 +1,12 @@
+// frontend/lib/api.ts
 import axios from "axios";
 import { getToken, clearToken } from "./auth";
 
-/** normaliza e evita // no baseURL */
+/** Normaliza URL e remove barras finais; sem tocar em window no build */
 function normalizeBaseURL(url?: string | null) {
   const raw = (url ?? "").trim();
-  if (!raw) {
-    // Fallback sensato p/ desenvolvimento local
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-      return "http://localhost:3001";
-    }
-    // Último recurso: usa a própria origem (útil se um dia fizer proxy)
-    return window?.location?.origin ?? "";
-  }
-  return raw.replace(/\/+$/, ""); // remove barras à direita
+  if (!raw) return undefined;           // deixa undefined: axios usa a origem no browser
+  return raw.replace(/\/+$/, "");       // remove barras à direita
 }
 
 const BASE_URL = normalizeBaseURL(process.env.NEXT_PUBLIC_API_URL);
@@ -35,7 +29,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // expulsa em 401
     if (err?.response?.status === 401) {
       clearToken();
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
