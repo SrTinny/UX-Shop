@@ -3,19 +3,29 @@ import { jwtDecode } from "jwt-decode";
 
 const TOKEN_KEY = "token";
 
-export function getToken(): string | null {
+function safeLocalStorage() {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** Lê o token somente quando houver window/localStorage */
+export function getToken(): string | null {
+  const ls = safeLocalStorage();
+  return ls ? ls.getItem(TOKEN_KEY) : null;
 }
 
 export function setToken(token: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(TOKEN_KEY, token);
+  const ls = safeLocalStorage();
+  if (ls) ls.setItem(TOKEN_KEY, token);
 }
 
 export function clearToken() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(TOKEN_KEY);
+  const ls = safeLocalStorage();
+  if (ls) ls.removeItem(TOKEN_KEY);
 }
 
 export function isAuthenticated(): boolean {
@@ -26,7 +36,7 @@ type JwtPayload = {
   id: string;
   email: string;
   role?: "USER" | "ADMIN";
-  exp?: number;
+  exp?: number; // epoch (segundos)
 };
 
 export function getUserFromToken(): JwtPayload | null {
@@ -34,7 +44,7 @@ export function getUserFromToken(): JwtPayload | null {
   if (!token) return null;
   try {
     const payload = jwtDecode<JwtPayload>(token);
-    // exp (se existir) e já expirou?
+    // exp existe e já expirou?
     if (payload?.exp && Date.now() >= payload.exp * 1000) {
       clearToken();
       return null;
