@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated, clearToken } from '@/lib/auth';
@@ -155,22 +156,26 @@ export default function CartPage() {
   if (!ready) return null;
 
   return (
-    <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <header className="flex items-center justify-between pb-4 border-b">
-        <h1 className="text-2xl font-semibold text-brand">Meu carrinho</h1>
-        <div className="flex items-center gap-3">
-          <a className="text-sm underline text-accent hover:text-brand" href="/products">
+    <main className="container mx-auto max-w-screen-lg px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      {/* Header */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+        <h1 className="text-xl sm:text-2xl font-semibold text-brand">Meu carrinho</h1>
+
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Link className="text-sm underline text-accent hover:text-brand" href="/products">
             Voltar aos produtos
-          </a>
+          </Link>
+
           <span className="inline-flex items-center gap-2 text-sm">
             Itens:
             <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white">
               {totalQty}
             </span>
           </span>
+
           <button
             onClick={handleLogout}
-            className="btn btn-accent px-3 py-1 h-8"
+            className="btn btn-accent h-8 px-3 py-1"
             title="Encerrar sessão"
           >
             Sair
@@ -190,18 +195,18 @@ export default function CartPage() {
           {Array.from({ length: 3 }).map((_, i) => (
             <li
               key={i}
-              className="card p-3 flex items-center justify-between gap-4 animate-pulse"
+              className="card p-3 sm:p-4 grid gap-3 sm:grid-cols-[1fr_auto] items-start animate-pulse"
             >
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0">
                 <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
                 <div className="h-3 w-64 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
                 <div className="h-3 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="h-9 w-9 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-9 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-9 w-9 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-9 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
               </div>
             </li>
           ))}
@@ -209,9 +214,13 @@ export default function CartPage() {
       )}
 
       {!loading && cart && cart.items.length === 0 && (
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          Seu carrinho está vazio.
-        </p>
+        <div className="rounded-lg border p-4 text-sm text-slate-700 dark:text-slate-300" style={{ borderColor: 'var(--color-border)', background: 'var(--color-card)' }}>
+          Seu carrinho está vazio.{' '}
+          <Link href="/products" className="text-accent underline hover:text-brand">
+            Explore produtos
+          </Link>
+          .
+        </div>
       )}
 
       {!loading && cart && cart.items.length > 0 && (
@@ -220,25 +229,30 @@ export default function CartPage() {
             {cart.items.map((it) => {
               const disabledRow = savingId === it.id || removingId === it.id;
               return (
-                <li key={it.id} className="card p-3 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
+                <li
+                  key={it.id}
+                  className="card p-3 sm:p-4 grid gap-3 sm:grid-cols-[1fr_auto] items-start"
+                >
+                  {/* Info do produto */}
+                  <div className="min-w-0 space-y-1">
                     <div className="font-medium truncate">{it.product.name}</div>
                     <div className="text-sm text-slate-600 dark:text-slate-300">
                       Preço: R$ {it.product.price.toFixed(2)} · Estoque: {it.product.stock}
                     </div>
-                    <div className="text-sm mt-1">
+                    <div className="text-sm">
                       Subtotal:{' '}
-                      <span className="font-medium text-brand">
+                      <span className="font-semibold text-brand">
                         R$ {(it.product.price * it.quantity).toFixed(2)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Controles */}
+                  <div className="flex flex-wrap items-center justify-end sm:justify-start gap-2">
                     <button
                       onClick={() => updateQty(it, it.quantity - 1)}
                       disabled={disabledRow || it.quantity <= 1}
-                      className="btn h-8 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
+                      className="btn h-9 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
                       title="Diminuir"
                       aria-label={`Diminuir quantidade de ${it.product.name}`}
                     >
@@ -247,6 +261,7 @@ export default function CartPage() {
 
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       max={it.product.stock}
                       value={it.quantity}
@@ -254,7 +269,7 @@ export default function CartPage() {
                         const next = Number(e.target.value);
                         if (Number.isFinite(next)) updateQty(it, next);
                       }}
-                      className="input-base w-20 text-center"
+                      className="input-base w-16 sm:w-20 text-center"
                       disabled={disabledRow}
                       aria-label={`Quantidade de ${it.product.name}`}
                     />
@@ -262,7 +277,7 @@ export default function CartPage() {
                     <button
                       onClick={() => updateQty(it, it.quantity + 1)}
                       disabled={disabledRow || it.quantity >= it.product.stock}
-                      className="btn h-8 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
+                      className="btn h-9 px-2 border border-black/10 dark:border-white/10 disabled:opacity-50"
                       title="Aumentar"
                       aria-label={`Aumentar quantidade de ${it.product.name}`}
                     >
@@ -272,7 +287,7 @@ export default function CartPage() {
                     <button
                       onClick={() => removeItem(it.id)}
                       disabled={disabledRow}
-                      className="btn h-8 px-3 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
+                      className="btn h-9 px-3 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                       title="Remover item"
                     >
                       Remover
@@ -283,12 +298,12 @@ export default function CartPage() {
             })}
           </ul>
 
-          <div className="flex items-center justify-between pt-4 border-t">
+          {/* Rodapé total/ações */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-lg font-semibold">
-              Total:{' '}
-              <span className="text-brand">R$ {total.toFixed(2)}</span>
+              Total: <span className="text-brand">R$ {total.toFixed(2)}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={clearCart}
                 className="btn border border-accent text-accent hover:bg-accent hover:text-white"
