@@ -1,48 +1,85 @@
-/* globals.css */
 @import "tailwindcss";
 
-/* ===== Design tokens (Tailwind v4) ===== */
+/* ===== Tokens base ===== */
 @theme {
-  --color-brand:  #7B53DA; /* roxo vivo */
-  --color-accent: #35C199; /* verde água */
-  --color-bg:     #f8fafc;
+  --color-brand:  #7B53DA;
+  --color-accent: #35C199;
+}
+
+/* ===== Light (default) ===== */
+:root {
+  --color-bg:     #f6f7fb;
   --color-card:   #ffffff;
   --color-text:   #0f172a;
+  --color-header: #ffffff;
+  --color-border: color-mix(in oklab, var(--color-card), black 10%);
+  --color-muted:  color-mix(in oklab, var(--color-text), white 40%);
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-bg:   #0b0f1a;
-    --color-card: #0f172a;
-    --color-text: #e2e8f0;
-  }
+/* ===== Dark ===== */
+.dark {
+  --color-bg:     #0b0f1a;
+  --color-card:   #0f172a;
+  --color-text:   #e2e8f0;
+  --color-header: #0b0f1a;
+  --color-border: color-mix(in oklab, var(--color-card), white 12%);
+  --color-muted:  color-mix(in oklab, var(--color-text), black 35%);
 }
 
-/* Base */
+/* ===== Base ===== */
 html, body {
   background: var(--color-bg);
   color: var(--color-text);
 }
 
+::selection {
+  background: color-mix(in oklab, var(--color-brand), white 70%);
+}
+
 /* ===== COMPONENTES ===== */
 @layer components {
-  .btn { @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors; }
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors;
+  }
+  .btn-primary { color:#fff; background: var(--color-brand); }
+  .btn-primary:hover { background-color: color-mix(in oklab, var(--color-brand), black 6%); }
 
-  .btn-primary { @apply text-white bg-brand; }
-  .btn-primary:hover { background-color: color-mix(in oklab, var(--color-brand), black 8%); }
+  .btn-accent  { color:#fff; background: var(--color-accent); }
+  .btn-accent:hover { background-color: color-mix(in oklab, var(--color-accent), black 6%); }
 
-  .btn-accent { @apply text-white bg-accent; }
-  .btn-accent:hover { background-color: color-mix(in oklab, var(--color-accent), black 8%); }
+  .btn-outline {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+  .btn[disabled], .btn:disabled { @apply opacity-60 cursor-not-allowed; }
 
+  /* Cards */
   .card {
-    @apply rounded-xl shadow-lg border;
     background: var(--color-card);
-    border-color: color-mix(in oklab, var(--color-card), black 8%);
+    border: 1px solid var(--color-border);
+    @apply rounded-xl shadow-lg;
   }
 
+  /* Inputs */
   .input-base {
-    @apply w-full rounded-lg border px-3 py-2 text-sm outline-none ring-0
-           bg-white dark:bg-slate-900 border-black/10 dark:border-white/10;
+    background: var(--color-card);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    @apply w-full rounded-lg px-3 py-2 text-sm outline-none ring-0;
   }
+  .input-base::placeholder { color: var(--color-muted); }
   .input-base:focus { @apply border-transparent ring-2 ring-brand; box-shadow: none; }
+  .input-base:disabled { @apply opacity-60 cursor-not-allowed; }
+
+  /* Badges pequenas úteis */
+  .badge {
+    background: color-mix(in oklab, var(--color-brand), white 85%);
+    color: var(--color-brand);
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
 }
+
+/* ===== Header usa tokens (aplique via style no componente) ===== */
+/* Ex.: <header style={{ background:'var(--color-header)', borderColor:'var(--color-border)' }} /> */
