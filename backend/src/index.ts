@@ -14,25 +14,23 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 
 /* ============== CORS ============== */
-const allowedOrigins = [
+// Produção + dev locais
+const staticAllowed = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://ux-software.vercel.app',
-  process.env.FRONTEND_URL || '',
 ].filter(Boolean)
+
+// Aceita também quaisquer *previews* da Vercel do seu projeto
+const vercelPreviewRe = /^https:\/\/ux-software(?:-[a-z0-9-]+)?\.vercel\.app$/i
+if (process.env.FRONTEND_URL) staticAllowed.push(process.env.FRONTEND_URL)
 
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
-    if (!origin) return cb(null, true)
-
-    // ✅ Permite domínio fixo
-    if (allowedOrigins.includes(origin)) return cb(null, true)
-
-    // ✅ Permite qualquer preview do Vercel
-    if (/^https:\/\/ux-software-.*\.vercel\.app$/.test(origin)) {
+    if (!origin) return cb(null, true) // curl/healthchecks
+    if (staticAllowed.includes(origin) || vercelPreviewRe.test(origin)) {
       return cb(null, true)
     }
-
     return cb(new Error(`Origin not allowed by CORS: ${origin}`))
   },
   credentials: true,
@@ -40,8 +38,10 @@ const corsOptions: CorsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 }
 
+// CORS para todas as rotas
 app.use(cors(corsOptions))
-app.options('*', cors(corsOptions)) // responde preflight
+
+app.options('(.*)', cors(corsOptions))
 /* ================================= */
 
 /* Rotas públicas */
