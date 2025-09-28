@@ -24,7 +24,15 @@ const allowedOrigins = [
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true)
+
+    // ✅ Permite domínio fixo
     if (allowedOrigins.includes(origin)) return cb(null, true)
+
+    // ✅ Permite qualquer preview do Vercel
+    if (/^https:\/\/ux-software-.*\.vercel\.app$/.test(origin)) {
+      return cb(null, true)
+    }
+
     return cb(new Error(`Origin not allowed by CORS: ${origin}`))
   },
   credentials: true,
@@ -33,6 +41,8 @@ const corsOptions: CorsOptions = {
 }
 
 app.use(cors(corsOptions))
+app.options('*', cors(corsOptions)) // responde preflight
+/* ================================= */
 
 /* Rotas públicas */
 app.use('/auth', authRoutes)
