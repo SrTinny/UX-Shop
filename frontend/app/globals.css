@@ -6,6 +6,17 @@
   --color-accent: #35C199;
 }
 
+html, body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+body > main {
+  flex: 1;
+}
+
+
 /* ===== Light (default) ===== */
 :root {
   --color-bg:     #f6f7fb;

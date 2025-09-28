@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import HeaderBar from './_components/HeaderBar';
+import Footer from './_components/Footer';
 
 export const metadata: Metadata = {
   title: 'UX Software',
@@ -26,6 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Conteúdo das páginas */}
           {children}
+
+          {/* Footer global */}
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
