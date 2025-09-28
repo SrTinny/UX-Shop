@@ -8,10 +8,13 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:generate": "prisma generate",
-    "seed": "prisma db seed"
+    "prisma:deploy": "prisma migrate deploy",
+    "seed": "prisma db seed",
+    "postinstall": "prisma generate && npm run build"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
