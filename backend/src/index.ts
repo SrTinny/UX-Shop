@@ -14,15 +14,16 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 
 /* ============== CORS ============== */
-// Produção + dev locais
+// Domínios fixos
 const staticAllowed = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://ux-software.vercel.app',
 ].filter(Boolean)
 
-// Aceita também quaisquer *previews* da Vercel do seu projeto
+// Aceita também quaisquer *previews* do Vercel do seu projeto
 const vercelPreviewRe = /^https:\/\/ux-software(?:-[a-z0-9-]+)?\.vercel\.app$/i
+
 if (process.env.FRONTEND_URL) staticAllowed.push(process.env.FRONTEND_URL)
 
 const corsOptions: CorsOptions = {
@@ -38,11 +39,8 @@ const corsOptions: CorsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 }
 
-// CORS para todas as rotas
+// ✅ Aplica CORS globalmente (inclui preflight nas rotas)
 app.use(cors(corsOptions))
-
-app.options('(.*)', cors(corsOptions))
-/* ================================= */
 
 /* Rotas públicas */
 app.use('/auth', authRoutes)
