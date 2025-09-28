@@ -11,6 +11,7 @@ export default function HeaderBar() {
   const [admin, setAdmin] = useState(false);
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [open, setOpen] = useState(false); // menu mobile
   const path = usePathname();
 
   useEffect(() => {
@@ -32,6 +33,11 @@ export default function HeaderBar() {
     }
   }, []);
 
+  // Fecha o menu quando a rota muda
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+
   const onLogout = () => {
     clearToken();
     window.location.href = "/login";
@@ -49,16 +55,26 @@ export default function HeaderBar() {
   // Esconde HeaderBar na tela de login
   if (path === "/login") return null;
 
-  const NavLink = ({ href, label }: { href: string; label: string }) => {
+  const NavLink = ({
+    href,
+    label,
+    className,
+  }: {
+    href: string;
+    label: string;
+    className?: string;
+  }) => {
     const active = path.startsWith(href);
     return (
       <Link
         href={href}
+        aria-current={active ? "page" : undefined}
         className={clsx(
-          "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          "rounded-md px-3 py-2 text-sm font-medium transition-colors",
           active
             ? "bg-brand/10 text-brand"
-            : "text-gray-600 hover:text-brand dark:text-gray-300 dark:hover:text-brand"
+            : "text-gray-700 hover:text-brand dark:text-gray-300 dark:hover:text-brand",
+          className
         )}
       >
         {label}
@@ -68,23 +84,23 @@ export default function HeaderBar() {
 
   return (
     <header
-      className="border-b shadow-sm"
+      className="sticky top-0 z-40 border-b shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-[#0b0f1a]/70"
       style={{
         background: "var(--color-header)",
         borderColor: "var(--color-border)",
       }}
     >
-      <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
+      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3">
         {/* Logo */}
         <Link
           href="/"
-          className="text-lg font-bold text-brand hover:opacity-90 transition"
+          className="text-base sm:text-lg font-bold text-brand hover:opacity-90 transition"
         >
           UX Software
         </Link>
 
-        {/* Navegação */}
-        <nav className="flex items-center gap-4">
+        {/* Botões à direita (desktop) */}
+        <nav className="hidden md:flex items-center gap-2 sm:gap-3">
           <NavLink href="/products" label="Produtos" />
 
           {authed && <NavLink href="/cart" label="Carrinho" />}
@@ -93,7 +109,7 @@ export default function HeaderBar() {
           {/* Botão de tema */}
           <button
             onClick={toggleTheme}
-            className="px-3 py-2 rounded-md border border-black/10 dark:border-white/10 text-sm"
+            className="rounded-md border border-black/10 dark:border-white/10 px-3 py-2 text-sm"
             title="Alternar tema"
           >
             {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
@@ -107,7 +123,90 @@ export default function HeaderBar() {
           ) : (
             <button
               onClick={onLogout}
-              className="px-4 py-2 rounded-md bg-brand text-white hover:bg-accent transition text-sm font-medium"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-accent"
+              title="Sair"
+            >
+              Sair
+            </button>
+          )}
+        </nav>
+
+        {/* Botão hambúrguer (mobile) */}
+        <div className="md:hidden">
+          <button
+            type="button"
+            aria-label="Abrir menu"
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            onClick={() => setOpen((s) => !s)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10"
+          >
+            {open ? (
+              // Ícone X
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              // Ícone hambúrguer
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Menu mobile */}
+      <div
+        id="mobile-menu"
+        className={clsx("md:hidden border-t", open ? "block" : "hidden")}
+        style={{ borderColor: "var(--color-border)" }}
+      >
+        <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
+          <NavLink href="/products" label="Produtos" className="w-full" />
+          {authed && (
+            <NavLink href="/cart" label="Carrinho" className="w-full" />
+          )}
+          {authed && admin && (
+            <NavLink href="/admin/products" label="Admin" className="w-full" />
+          )}
+
+          <button
+            onClick={toggleTheme}
+            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10"
+            title="Alternar tema"
+          >
+            {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
+          </button>
+
+          {!authed ? (
+            <>
+              <NavLink href="/login" label="Login" className="w-full" />
+              <NavLink href="/register" label="Cadastro" className="w-full" />
+            </>
+          ) : (
+            <button
+              onClick={onLogout}
+              className="mt-1 w-full rounded-md bg-brand px-4 py-2 text-left text-sm font-medium text-white transition hover:bg-accent"
               title="Sair"
             >
               Sair
