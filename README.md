@@ -1,6 +1,8 @@
 ```markdown
 # 🛍️ Projeto Fullstack - Loja Online
-Ele implementa uma **loja online com autenticação, carrinho de compras e área administrativa**, utilizando tecnologias modernas no **frontend** e no **backend**.
+
+Este é um projeto **Fullstack** que implementa uma **loja online com autenticação, carrinho de compras e área administrativa**, utilizando tecnologias modernas no **frontend** e no **backend**.  
+O projeto foi desenvolvido com foco em **boas práticas**, **UX aprimorada** e **deploy em nuvem**.
 
 ---
 
@@ -15,12 +17,18 @@ Ele implementa uma **loja online com autenticação, carrinho de compras e área
 - **Sonner** (notificações/toasts)
 
 ### 🔹 Backend
-- **NestJS**
+- **Express + TypeScript**
 - **Prisma ORM**
-- **PostgreSQL** (banco de dados)
+- **PostgreSQL (NeonDB)** – banco de dados em nuvem
 - **JWT** (autenticação)
 - **bcrypt** (hash de senhas)
-- **Swagger** (documentação da API)
+- **Middleware de erros customizado**
+- **CORS configurado dinamicamente** para múltiplos domínios
+
+### 🔹 Deploy/Infra
+- **Render** → hospedagem do backend (API)
+- **Vercel** → hospedagem do frontend
+- **Neon** → banco de dados PostgreSQL escalável em nuvem
 
 ---
 
@@ -29,7 +37,7 @@ Ele implementa uma **loja online com autenticação, carrinho de compras e área
 
 / (raiz)
 ├── frontend/   → Aplicação Next.js (cliente + admin)
-├── backend/    → API NestJS (autenticação, produtos, carrinho)
+├── backend/    → API Express (autenticação, produtos, carrinho)
 └── README.md   → Este arquivo
 
 ````
@@ -55,9 +63,14 @@ Cada pasta contém seu próprio `README.md` com instruções detalhadas:
   - Validação com React Hook Form + Zod
   - Controle de acesso (apenas administradores)
 - **UI/UX**
+  - Landing page inicial estilizada com descrição do sistema
   - TailwindCSS com paleta de cores personalizada
   - Feedback de ações com toasts
   - Layout responsivo e acessível
+- **Infra**
+  - Deploy automatizado no **Render** (backend) e **Vercel** (frontend)
+  - Banco de dados persistente no **Neon**
+  - Variáveis de ambiente para configurar domínios permitidos no CORS
 
 ---
 
@@ -65,7 +78,7 @@ Cada pasta contém seu próprio `README.md` com instruções detalhadas:
 
 ### Pré-requisitos
 - Node.js **>= 18**
-- PostgreSQL rodando localmente (ou em container)
+- PostgreSQL local ou conta no **NeonDB**
 - npm ou yarn
 
 ### Passos
@@ -81,14 +94,20 @@ cd ../frontend && npm install
 
 ### Configurar variáveis de ambiente
 
-* Backend: `backend/.env` (configuração do banco e JWT_SECRET)
-* Frontend: `frontend/.env.local` (definir URL da API, ex: `http://localhost:3001`)
+* Backend: `backend/.env`
+
+  * `DATABASE_URL` (string de conexão do PostgreSQL/Neon)
+  * `JWT_SECRET`
+  * `FRONTEND_URL` (domínio do frontend para o CORS)
+* Frontend: `frontend/.env.local`
+
+  * `NEXT_PUBLIC_API_URL` (ex: `http://localhost:3001` ou URL do Render)
 
 ### Rodar o backend
 
 ```bash
 cd backend
-npm run start:dev
+npm run dev
 ```
 
 ### Rodar o frontend
@@ -101,7 +120,7 @@ npm run dev
 Acesse em:
 
 * Frontend: [http://localhost:3000](http://localhost:3000)
-* Backend: [http://localhost:3001](http://localhost:3001) (Swagger disponível em `/api`)
+* Backend: [http://localhost:3001](http://localhost:3001)
 
 ---
 
@@ -111,6 +130,7 @@ Acesse em:
 
   * Email: `admin@example.com`
   * Senha: `123456`
+
 * **Cliente**
 
   * Email: `user@example.com`
@@ -129,8 +149,17 @@ Este projeto cobre os pontos exigidos tanto para **Desenvolvedor Back-End** quan
 * Validação de dados
 * Integração frontend ↔ backend
 * Boas práticas de UI/UX
+* Deploy completo em nuvem (frontend, backend e banco)
+
+---
+
+## 🌐 Deploys
+
+* **Frontend (Vercel):** [https://ux-software.vercel.app](https://ux-software.vercel.app)
+* **Backend (Render):** [https://ux-software.onrender.com](https://ux-software.onrender.com)
+* **Banco de Dados (Neon):** PostgreSQL em nuvem
 
 ---
 
 ```
-
+```

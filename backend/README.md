@@ -1,8 +1,8 @@
----
-
+```markdown
 # 📦 UX Software – API (Node + TypeScript + Express + Prisma + PostgreSQL)
 
-API de e-commerce simplificado com autenticação JWT, roles (`USER`/`ADMIN`), CRUD de produtos e carrinho persistido.
+API de e-commerce simplificado com autenticação JWT, roles (`USER`/`ADMIN`), CRUD de produtos e carrinho persistido.  
+Hospedada no **Render**, com banco de dados PostgreSQL no **Neon**.
 
 ---
 
@@ -10,10 +10,12 @@ API de e-commerce simplificado com autenticação JWT, roles (`USER`/`ADMIN`), C
 
 * **Node.js + TypeScript**
 * **Express**
-* **Prisma ORM** (PostgreSQL)
+* **Prisma ORM** (PostgreSQL/Neon)
 * **Zod** (validação)
 * **JWT** (auth)
+* **bcrypt** (hash de senhas)
 * **ESLint** (qualidade)
+* **CORS dinâmico** (origens whitelist configuradas via `.env`)
 * **Insomnia** (testes manuais)
 
 ---
@@ -21,6 +23,7 @@ API de e-commerce simplificado com autenticação JWT, roles (`USER`/`ADMIN`), C
 ## 🗂 Estrutura de pastas
 
 ```
+
 src/
   config/
     prisma.ts
@@ -35,16 +38,18 @@ src/
     products/
       product.controller.ts
       product.routes.ts
+      product.service.ts
     cart/
       cart.controller.ts
       cart.routes.ts
       cart.schemas.ts
   index.ts
 prisma/
-  schema.prisma
   migrations/
+  schema.prisma
   seed.ts
-```
+
+````
 
 ---
 
@@ -53,26 +58,29 @@ prisma/
 ### 1) Pré-requisitos
 
 * Node 18+
-* PostgreSQL rodando em `localhost:5432` (ou ajuste no `.env`)
+* PostgreSQL local ou conta no **NeonDB**
 
 ### 2) Instalar dependências
 
 ```bash
 npm install
-```
+````
 
 ### 3) Variáveis de ambiente
 
 Crie um arquivo `.env` na raiz:
 
 ```env
-DATABASE_URL="postgresql://postgres:admin@localhost:5432/ux_software?schema=public"
+DATABASE_URL="postgresql://usuario:senha@host:5432/ux_software?sslmode=require"
 JWT_SECRET="uma_chave_secreta_forte_aqui"
 PORT=3000
 NODE_ENV=development
+
+# URL do frontend permitida no CORS
+FRONTEND_URL="https://ux-software.vercel.app"
 ```
 
-> Ajuste usuário/senha/porta conforme seu ambiente.
+> No deploy no **Render**, essas variáveis devem ser configuradas no painel.
 
 ### 4) Migrations + Prisma Client
 
@@ -219,6 +227,9 @@ Necessita `Authorization: Bearer <TOKEN>`
 # Desenvolvimento
 npm run dev
 
+# Build
+npm run build && npm start
+
 # Lint
 npm run lint
 
@@ -263,3 +274,10 @@ Use `Authorization: Bearer {{ token }}`.
 
 ---
 
+## 🌐 Deploy
+
+* **Backend (Render):** [https://ux-software.onrender.com](https://ux-software.onrender.com)
+* **Banco de Dados (Neon):** PostgreSQL em nuvem
+
+```
+```
