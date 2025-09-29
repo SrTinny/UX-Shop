@@ -22,8 +22,6 @@ Hospedada no **Render**, com banco de dados PostgreSQL no **Neon**.
 
 ## 🗂 Estrutura de pastas
 
-```
-
 src/
   config/
     prisma.ts
@@ -49,7 +47,6 @@ prisma/
   schema.prisma
   seed.ts
 
-````
 
 ---
 
