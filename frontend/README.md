@@ -1,4 +1,3 @@
-```markdown
 # 🛒 Frontend - UX Software
 
 Este é o **frontend** do projeto de e-commerce desenvolvido com **Next.js 14 (App Router)**, **React**, **TypeScript** e **TailwindCSS v4**.  
@@ -22,8 +21,7 @@ Hospedado na **Vercel**, integrado ao backend no **Render** e banco no **Neon**.
 
 ## 📂 Estrutura de Pastas (principais)
 
-```
-
+```markdown
 frontend/
   app/
     components/ → componentes reutilizáveis de produto
@@ -176,6 +174,3 @@ Este frontend cobre os pontos exigidos para **Desenvolvedor Front-End**:
 
 * **Frontend (Vercel):** [https://ux-software.vercel.app](https://ux-software.vercel.app)
 * **Backend (Render):** [https://ux-software.onrender.com](https://ux-software.onrender.com)
-
-```
-```
