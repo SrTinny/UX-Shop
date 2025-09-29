@@ -1,4 +1,3 @@
-```markdown
 # 📦 UX Software – API (Node + TypeScript + Express + Prisma + PostgreSQL)
 
 API de e-commerce simplificado com autenticação JWT, roles (`USER`/`ADMIN`), CRUD de produtos e carrinho persistido.  
@@ -22,6 +21,7 @@ Hospedada no **Render**, com banco de dados PostgreSQL no **Neon**.
 
 ## 🗂 Estrutura de pastas
 
+```markdown
 src/
   config/
     prisma.ts
@@ -47,9 +47,8 @@ prisma/
   schema.prisma
   seed.ts
 
-
+````
 ---
-
 ## 🚀 Como rodar o projeto
 
 ### 1) Pré-requisitos
@@ -275,6 +274,3 @@ Use `Authorization: Bearer {{ token }}`.
 
 * **Backend (Render):** [https://ux-software.onrender.com](https://ux-software.onrender.com)
 * **Banco de Dados (Neon):** PostgreSQL em nuvem
-
-```
-```
