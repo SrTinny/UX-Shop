@@ -1,9 +1,7 @@
-```markdown
 # 🛍️ Projeto Fullstack - Loja Online
 
 Este é um projeto **Fullstack** que implementa uma **loja online com autenticação, carrinho de compras e área administrativa**, utilizando tecnologias modernas no **frontend** e no **backend**.  
 O projeto foi desenvolvido com foco em **boas práticas**, **UX aprimorada** e **deploy em nuvem**.
-
 ---
 
 ## 🚀 Tecnologias Utilizadas
@@ -33,8 +31,8 @@ O projeto foi desenvolvido com foco em **boas práticas**, **UX aprimorada** e *
 ---
 
 ## 📂 Estrutura do Projeto
-```
 
+```markdown
 / (raiz)
 ├── frontend/   → Aplicação Next.js (cliente + admin)
 ├── backend/    → API Express (autenticação, produtos, carrinho)
@@ -160,6 +158,3 @@ Este projeto cobre os pontos exigidos tanto para **Desenvolvedor Back-End** quan
 * **Banco de Dados (Neon):** PostgreSQL em nuvem
 
 ---
-
-```
-```
