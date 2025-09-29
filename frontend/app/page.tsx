@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -7,28 +6,11 @@ export default function Home() {
       className="relative flex min-h-screen items-center justify-center px-6 py-12 text-center
                  bg-gradient-to-b from-brand/5 to-accent/10 dark:from-brand/10 dark:to-accent/5"
     >
-      {/* Logo decorativo no fundo (opcional) */}
-      <Image
-        src="/next.svg"
-        alt=""
-        width={280}
-        height={60}
-        priority
-        aria-hidden
-        className="pointer-events-none select-none absolute top-24 left-1/2 -translate-x-1/2
-                   opacity-20 blur-[1px] dark:invert"
-      />
-
       <main className="relative z-10 w-full max-w-3xl flex flex-col items-center gap-8">
-        {/* Logo da marca (pode trocar para o seu) */}
-        <Image
-          src="/next.svg"
-          alt="Logo UX Software"
-          width={180}
-          height={38}
-          priority
-          className="mx-auto dark:invert"
-        />
+        {/* Nome da empresa no lugar do logo */}
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100">
+          UX Software
+        </h2>
 
         <header className="space-y-3">
           <h1
