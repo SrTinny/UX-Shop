@@ -10,6 +10,7 @@ import { addGuestItem } from '@/lib/cart';
 import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
 import ProductCard from '@/app/_components/ProductCard';
+import FilterBar from '@/app/_components/FilterBar';
 
 /* ===================== Tipos ===================== */
 type Product = {
@@ -41,6 +42,10 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
+  // filtros e ordenação
+  const [sort, setSort] = useState<string>('relevance');
+  const [category, setCategory] = useState<string>('');
+
   // carrinho (badge)
   const [cartQty, setCartQty] = useState<number>(0);
 
@@ -56,23 +61,25 @@ export default function ProductsPage() {
 
   // sincroniza `search` com o query param (quando o header navega para /products?search=...)
   const searchParams = useSearchParams();
-  useEffect(() => {
-    try {
-      const q = searchParams?.get('search') ?? '';
-      setSearch(q);
-      // busca imediata quando a query string muda
-      void fetchProducts({ term: q.trim(), page: 1 });
-    } catch {
-      // ignore
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams?.toString()]);
 
   const fetchProducts = useCallback(
-    async (opts: { term?: string; page?: number; append?: boolean } = {}) => {
-      const { term = search.trim(), page = 1, append = false } = opts;
+    async (opts?: {
+      term?: string;
+      page?: number;
+      perPage?: number;
+      append?: boolean;
+      sort?: string;
+      category?: string;
+    }) => {
+      const {
+        term = search,
+        page = 1,
+        perPage = PER_PAGE,
+        append = false,
+        sort: sortOpt = sort,
+        category: categoryOpt = category,
+      } = opts ?? {};
 
-      // cancela requisição anterior
       if (abortRef.current) abortRef.current.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -81,8 +88,13 @@ export default function ProductsPage() {
         setLoading(true);
         setError(null);
 
+        const params: Record<string, unknown> = { page, perPage };
+        if (term) params.search = term;
+        if (sortOpt) params.sort = sortOpt;
+        if (categoryOpt) params.category = categoryOpt;
+
         const res = await api.get<ProductsResponse>('/products', {
-          params: { page, perPage: PER_PAGE, search: term || undefined },
+          params,
           signal: ctrl.signal as AbortSignal,
         });
 
@@ -95,15 +107,13 @@ export default function ProductsPage() {
           setItems(list);
         }
 
-        // UX: feedback quando a busca não retorna
-        if (page === 1 && list.length === 0 && term.length > 0) {
+        if (page === 1 && list.length === 0 && (term ?? '').length > 0) {
           toast.info('Nenhum produto encontrado para sua busca.');
         }
       } catch (e: unknown) {
         if (axios.isAxiosError(e)) {
-          if (e.code === 'ERR_CANCELED') return; // usuário digitou novamente
+          if (e.code === 'ERR_CANCELED') return;
           if (e.response?.status === 401) {
-            // sessão expirada: avisamos, mas não forçamos redirecionamento nesta página pública
             toast.error('Sessão expirada. Faça login para gerenciar o carrinho.');
             setError('Sessão expirada');
             return;
@@ -125,8 +135,15 @@ export default function ProductsPage() {
         setLoading(false);
       }
     },
-    [search],
+    [search, sort, category],
   );
+
+  useEffect(() => {
+    const q = searchParams?.get('search') ?? '';
+    setSearch(q);
+    void fetchProducts({ term: q.trim(), page: 1, sort, category });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString(), sort, category]);
 
   const fetchCartQty = useCallback(async () => {
     try {
@@ -228,6 +245,24 @@ export default function ProductsPage() {
       </header>
 
       {/* Busca agora no header; removido formulário local para evitar duplicação */}
+
+      {/* Filter bar: sort and category selectors */}
+      <div className="mb-4">
+        <FilterBar
+          sort={sort}
+          category={category}
+          onSortChange={(v) => {
+            setSort(v);
+            setPage(1);
+            void fetchProducts({ term: search.trim(), page: 1, sort: v, category });
+          }}
+          onFilterChange={(v) => {
+            setCategory(v);
+            setPage(1);
+            void fetchProducts({ term: search.trim(), page: 1, sort, category: v });
+          }}
+        />
+      </div>
 
       {/* Mensagem de erro */}
       {error && (
