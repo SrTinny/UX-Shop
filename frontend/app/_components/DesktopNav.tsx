@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { CartIcon } from "@/app/components/Icons";
+// CartIcon moved to ActionIcons; not used directly here
 import ActionIcons from './ActionIcons';
+import navigation from '@/lib/navigation';
 
 type Props = {
   authed: boolean;
@@ -38,28 +39,33 @@ export default function DesktopNav({ authed, admin, theme, toggleTheme, onLogout
 
   return (
     <nav className="hidden md:flex items-center gap-2 sm:gap-3">
-      <NavLink href="/products" label="Produtos" />
+      {navigation.map((item) => (
+        item.children ? (
+          <div key={item.label} className="relative group">
+            <button className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              {item.label}
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg>
+            </button>
+            <div className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-[#071022] border border-gray-200 dark:border-white/10 shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity">
+              <ul className="py-2">
+                {item.children.map((sub) => (
+                  <li key={sub.label}>
+                    <Link href={sub.href} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200">{sub.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <NavLink key={item.label} href={item.href ?? '#'} label={item.label} />
+        )
+      ))}
 
-      {authed && (
-        <NavLink
-          href="/cart"
-          label={
-            <span className="inline-flex items-center gap-1">
-              <CartIcon className="h-5 w-5 inline-block" />
-              <span className="sr-only">Carrinho</span>
-              {cartCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs transform transition-transform ${badgePulse ? 'scale-110 shadow-md' : ''}`}>
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </span>
-          }
-        />
-      )}
+      {/* Cart link removed here to avoid duplication with ActionIcons (cart shown in ActionIcons) */}
 
       {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
-      <ActionIcons authed={authed} admin={admin} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} cartCount={cartCount} badgePulse={badgePulse} />
+  <ActionIcons authed={authed} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} cartCount={cartCount} badgePulse={badgePulse} />
     </nav>
   );
 }

@@ -5,8 +5,10 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
 import { api } from '@/lib/api';
+import DesktopNav from './DesktopNav';
+import MobileNav from './MobileNav';
 import { CartIcon } from '@/app/components/Icons';
-import clsx from "clsx";
+// clsx not used here; navigation components handle conditional classes
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function HeaderBar() {
@@ -121,32 +123,7 @@ export default function HeaderBar() {
   // Esconde HeaderBar na tela de login
   if (path === "/login") return null;
 
-  const NavLink = ({
-    href,
-    label,
-    className,
-  }: {
-    href: string;
-    label: React.ReactNode;
-    className?: string;
-  }) => {
-    const active = path.startsWith(href);
-    return (
-      <Link
-        href={href}
-        aria-current={active ? "page" : undefined}
-        className={clsx(
-          "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          active
-            ? "bg-brand/10 text-brand"
-            : "text-gray-700 hover:text-brand dark:text-gray-300 dark:hover:text-brand",
-          className
-        )}
-      >
-        {label}
-      </Link>
-    );
-  };
+  // NavLink was removed; DesktopNav and MobileNav handle rendering navigation items
 
   // compute badge text
   const cartBadge = cartCount > 9 ? '+9' : String(cartCount);
@@ -202,44 +179,16 @@ export default function HeaderBar() {
           </div>
         </div>
 
-          {/* Botões à direita (desktop) */}
-          <nav className="hidden md:flex items-center gap-2 sm:gap-3">
-          <NavLink href="/products" label="Produtos" />
-
-          {authed && (
-            <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
-              <CartIcon className="h-5 w-5 text-current" />
-              <span className="sr-only">Carrinho</span>
-              <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
-            </Link>
-          )}
-          {authed && admin && <NavLink href="/admin/products" label="Admin" />}
-
-          {/* Botão de tema (ícone apenas) */}
-          <button
-            onClick={toggleTheme}
-            className="rounded-md border border-black/10 dark:border-white/10 p-2"
-            title="Alternar tema"
-          >
-            {theme === "light" ? '🌙' : '☀️'}
-            <span className="sr-only">Alternar tema</span>
-          </button>
-
-          {!authed ? (
-            <>
-              <NavLink href="/login" label="Login" />
-              <NavLink href="/register" label="Cadastro" />
-            </>
-          ) : (
-            <button
-              onClick={onLogout}
-              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-accent"
-              title="Sair"
-            >
-              Sair
-            </button>
-          )}
-        </nav>
+        {/* Desktop navigation (centralized) */}
+        <DesktopNav
+          authed={authed}
+          admin={admin}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onLogout={onLogout}
+          cartCount={cartCount}
+          badgePulse={false}
+        />
         {/* Mobile right group: cart icon + search toggle/input + hamburger */}
         <div className="md:hidden flex items-center gap-2">
           {/* cart icon (small) */}
@@ -324,44 +273,8 @@ export default function HeaderBar() {
         </div>
       </div>
 
-      {/* Menu mobile */}
-      <div
-        id="mobile-menu"
-        className={clsx("md:hidden border-t", open ? "block" : "hidden")}
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
-          <NavLink href="/products" label="Produtos" className="w-full" />
-          {/* cart link removed from mobile menu; cart is shown in the header top bar for mobile */}
-          {authed && admin && (
-            <NavLink href="/admin/products" label="Admin" className="w-full" />
-          )}
-
-          <button
-            onClick={toggleTheme}
-            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10 flex items-center gap-2"
-            title="Alternar tema"
-          >
-            <span className="text-lg">{theme === "light" ? '🌙' : '☀️'}</span>
-            <span className="sr-only">Alternar tema</span>
-          </button>
-
-          {!authed ? (
-            <>
-              <NavLink href="/login" label="Login" className="w-full" />
-              <NavLink href="/register" label="Cadastro" className="w-full" />
-            </>
-          ) : (
-            <button
-              onClick={onLogout}
-              className="mt-1 w-full rounded-md bg-brand px-4 py-2 text-left text-sm font-medium text-white transition hover:bg-accent"
-              title="Sair"
-            >
-              Sair
-            </button>
-          )}
-        </nav>
-      </div>
+      {/* Mobile menu managed by MobileNav component */}
+      <MobileNav open={open} setOpen={setOpen} authed={authed} admin={admin} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />
     </header>
   );
 }

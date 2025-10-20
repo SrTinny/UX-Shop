@@ -6,7 +6,6 @@ import clsx from "clsx";
 
 type Props = {
   authed: boolean;
-  admin: boolean;
   theme: "light" | "dark";
   toggleTheme: () => void;
   onLogout: () => void;
@@ -14,7 +13,7 @@ type Props = {
   badgePulse?: boolean;
 };
 
-export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogout, cartCount, badgePulse }: Props) {
+export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cartCount, badgePulse }: Props) {
   const badge = cartCount > 9 ? '+9' : String(cartCount);
 
   return (
@@ -28,18 +27,7 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
         )}
       </Link>
 
-      {/* Admin (small icon) */}
-      {admin && (
-        <Link href="/admin/products" aria-label="Admin" className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 1v3" />
-            <path d="M12 20v3" />
-            <path d="M4 7l2 1" />
-            <path d="M18 16l2 1" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </Link>
-      )}
+      {/* Admin icon removed - admin link remains in navigation menus */}
 
       {/* Theme toggle */}
       <button onClick={toggleTheme} title="Alternar tema" className="p-2 rounded-md border border-black/10 dark:border-white/10">
