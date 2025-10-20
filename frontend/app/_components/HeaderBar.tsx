@@ -15,6 +15,8 @@ export default function HeaderBar() {
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement | null>(null);
   const path = usePathname();
   const [cartCount, setCartCount] = useState<number>(0);
   // global search
@@ -166,12 +168,12 @@ export default function HeaderBar() {
         </Link>
 
         {/* Search input placed in the header (desktop) */}
-        <div className="hidden md:block flex-1 px-4">
+        <div className="hidden md:flex flex-1 px-4">
           <div className="relative">
             <input
               id="header-search-input"
               data-header-search="true"
-              className="w-80 pl-9 pr-3 py-2 rounded-md border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
+              className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
               style={theme === 'light' ? { backgroundColor: '#ffffff', color: '#0f172a' } : undefined}
               placeholder="Buscar produtos..."
               value={query}
@@ -199,8 +201,8 @@ export default function HeaderBar() {
           </div>
         </div>
 
-        {/* Botões à direita (desktop) */}
-        <nav className="hidden md:flex items-center gap-2 sm:gap-3">
+          {/* Botões à direita (desktop) */}
+          <nav className="hidden md:flex items-center gap-2 sm:gap-3">
           <NavLink href="/products" label="Produtos" />
 
           {authed && (
@@ -237,64 +239,40 @@ export default function HeaderBar() {
             </button>
           )}
         </nav>
+        {/* Mobile right group: cart icon + search toggle/input + hamburger */}
+        <div className="md:hidden flex items-center gap-2">
+          {/* cart icon (small) */}
+          {authed ? (
+            <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+              <CartIcon className="h-5 w-5 text-current" />
+              <span className="sr-only">Carrinho</span>
+              <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
+            </Link>
+          ) : (
+            <button className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5" aria-label="Carrinho">
+              <CartIcon className="h-5 w-5 text-current" />
+            </button>
+          )}
 
-        {/* Botão hambúrguer (mobile) */}
-        <div className="md:hidden">
-          <button
-            type="button"
-            aria-label="Abrir menu"
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            onClick={() => setOpen((s) => !s)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10"
-          >
-            {open ? (
-              // Ícone X
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* mobile search: when closed show small icon button, when open show input that grows */}
+          <div className="relative flex items-center">
+            {!mobileSearchOpen ? (
+              <button
+                onClick={() => {
+                  setMobileSearchOpen(true);
+                  setTimeout(() => mobileSearchRef.current?.focus(), 50);
+                }}
+                className="p-2 rounded-md bg-black/5 dark:bg-white/5"
+                aria-label="Buscar"
               >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+                <svg className="h-4 w-4 text-gray-700 dark:text-gray-200" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
+                </svg>
+              </button>
             ) : (
-              // Ícone hambúrguer
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Menu mobile */}
-      <div
-        id="mobile-menu"
-        className={clsx("md:hidden border-t", open ? "block" : "hidden")}
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
-          {/* Mobile search */}
-          <div className="mb-2">
-            <div className="relative">
               <input
-                className="input-base w-full pl-9 border border-gray-200 rounded-md"
-                style={theme === 'light' ? { backgroundColor: '#ffffff', color: '#0f172a' } : undefined}
+                ref={mobileSearchRef}
+                className="pl-9 pr-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm w-48"
                 placeholder="Buscar produtos..."
                 value={query}
                 onChange={(e) => {
@@ -311,24 +289,49 @@ export default function HeaderBar() {
                     e.preventDefault();
                     if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
                     navigateWithQuery(query);
-                    setOpen(false);
+                    setMobileSearchOpen(false);
+                  } else if (e.key === 'Escape') {
+                    setMobileSearchOpen(false);
                   }
                 }}
                 aria-label="Buscar produtos"
               />
-              <svg aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
-              </svg>
-            </div>
+            )}
           </div>
+
+          <button
+            type="button"
+            aria-label="Abrir menu"
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            onClick={() => setOpen((s) => !s)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10"
+          >
+            {open ? (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Menu mobile */}
+      <div
+        id="mobile-menu"
+        className={clsx("md:hidden border-t", open ? "block" : "hidden")}
+        style={{ borderColor: "var(--color-border)" }}
+      >
+        <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
           <NavLink href="/products" label="Produtos" className="w-full" />
-          {authed && (
-            <Link href="/cart" className="relative flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 w-full">
-              <CartIcon className="h-5 w-5 text-current" />
-              <span className="sr-only">Carrinho</span>
-              <span className="absolute -top-1 -right-3 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
-            </Link>
-          )}
+          {/* cart link removed from mobile menu; cart is shown in the header top bar for mobile */}
           {authed && admin && (
             <NavLink href="/admin/products" label="Admin" className="w-full" />
           )}
