@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import Link from 'next/link';
+// Link removido (uso centralizado no HeaderBar)
 import Image from 'next/image'; // 👈 adicionado
 import axios from 'axios';
 import { api } from '@/lib/api';
@@ -9,6 +9,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
 import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
+import { PlusIcon } from '@/app/components/Icons';
 
 /* ===================== Tipos ===================== */
 type Product = {
@@ -63,7 +64,6 @@ export default function ProductsPage() {
 
   // carrinho (badge)
   const [cartQty, setCartQty] = useState<number>(0);
-  const [cartLoading, setCartLoading] = useState(false);
 
   // botão adicionar
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -138,13 +138,12 @@ export default function ProductsPage() {
 
   const fetchCartQty = useCallback(async () => {
     try {
-      setCartLoading(true);
-        // só tenta buscar o carrinho se o usuário estiver autenticado
-        if (!isAuthenticated()) {
-          setCartQty(0);
-          return;
-        }
-        const res = await api.get('/cart');
+      // só tenta buscar o carrinho se o usuário estiver autenticado
+      if (!isAuthenticated()) {
+        setCartQty(0);
+        return;
+      }
+      const res = await api.get('/cart');
       const total = (res.data?.items ?? []).reduce(
         (acc: number, it: { quantity: number }) => acc + it.quantity,
         0,
@@ -152,8 +151,6 @@ export default function ProductsPage() {
       setCartQty(total);
     } catch {
       setCartQty(0);
-    } finally {
-      setCartLoading(false);
     }
   }, []);
 
@@ -240,23 +237,9 @@ export default function ProductsPage() {
         onLogin={handleLoginNow}
         onContinueGuest={handleContinueGuest}
       />
-      {/* Top bar local */}
+      {/* Top bar local (apenas título) */}
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
-
-        <Link
-          href="/cart"
-          className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-brand/10 text-brand hover:bg-brand/15 transition"
-          aria-label="Ir para o carrinho"
-        >
-          Meu carrinho
-          <span
-            className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white text-xs"
-            aria-live="polite"
-          >
-            {cartLoading ? '…' : cartQty}
-          </span>
-        </Link>
       </header>
 
       {/* Busca */}
@@ -380,11 +363,11 @@ export default function ProductsPage() {
                   <button
                     disabled={p.stock <= 0 || addingId === p.id}
                     onClick={() => addToCart(p.id)}
-                    className="btn btn-primary disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-md bg-brand text-white px-3 py-2 text-sm hover:opacity-95 disabled:opacity-60"
                     title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
                     aria-disabled={p.stock <= 0 || addingId === p.id}
                   >
-                    {addingId === p.id ? 'Adicionando…' : 'Adicionar'}
+                    {addingId === p.id ? 'Adicionando…' : <><PlusIcon className="h-4 w-4" />Adicionar</>}
                   </button>
                 </div>
               </li>

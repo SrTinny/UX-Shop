@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { api } from '@/lib/api';
-import { isAuthenticated, clearToken } from '@/lib/auth';
+import { isAuthenticated } from '@/lib/auth';
 import { toast } from 'sonner';
+import { PlusIcon, MinusIcon, TrashIcon } from '@/app/components/Icons';
 
 type CartItem = {
   id: string;
@@ -79,10 +80,7 @@ export default function CartPage() {
     return cart.items.reduce((acc, it) => acc + it.quantity, 0);
   }, [cart]);
 
-  const handleLogout = () => {
-    clearToken();
-    window.location.href = '/login';
-  };
+  // logout é gerenciado pelo HeaderBar global
 
   async function updateQty(item: CartItem, nextQty: number) {
     if (nextQty < 1) return;
@@ -162,24 +160,12 @@ export default function CartPage() {
         <h1 className="text-xl sm:text-2xl font-semibold text-brand">Meu carrinho</h1>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <Link className="text-sm underline text-accent hover:text-brand" href="/products">
-            Voltar aos produtos
-          </Link>
-
           <span className="inline-flex items-center gap-2 text-sm">
             Itens:
             <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-brand text-white">
               {totalQty}
             </span>
           </span>
-
-          <button
-            onClick={handleLogout}
-            className="btn btn-accent h-8 px-3 py-1"
-            title="Encerrar sessão"
-          >
-            Sair
-          </button>
         </div>
       </header>
 
@@ -256,7 +242,7 @@ export default function CartPage() {
                       title="Diminuir"
                       aria-label={`Diminuir quantidade de ${it.product.name}`}
                     >
-                      −
+                      <MinusIcon />
                     </button>
 
                     <input
@@ -281,7 +267,7 @@ export default function CartPage() {
                       title="Aumentar"
                       aria-label={`Aumentar quantidade de ${it.product.name}`}
                     >
-                      +
+                      <PlusIcon />
                     </button>
 
                     <button
@@ -289,8 +275,9 @@ export default function CartPage() {
                       disabled={disabledRow}
                       className="btn h-9 px-3 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                       title="Remover item"
+                      aria-label={`Remover ${it.product.name}`}
                     >
-                      Remover
+                      <TrashIcon />
                     </button>
                   </div>
                 </li>

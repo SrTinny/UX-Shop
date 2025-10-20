@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
+import { CartIcon } from '@/app/components/Icons';
+import { api } from '@/lib/api';
 import clsx from "clsx";
 
 export default function HeaderBar() {
@@ -13,6 +15,7 @@ export default function HeaderBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
   const path = usePathname();
+  const [cartCount, setCartCount] = useState<number>(0);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -38,6 +41,32 @@ export default function HeaderBar() {
     setOpen(false);
   }, [path]);
 
+  // Busca a quantidade total do carrinho (somente quando pronto e autenticado)
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        if (!isAuthenticated()) {
+          if (!cancelled) setCartCount(0);
+          return;
+        }
+        const res = await api.get('/cart');
+        const total = (res.data?.items ?? []).reduce(
+          (acc: number, it: { quantity: number }) => acc + it.quantity,
+          0,
+        );
+        if (!cancelled) setCartCount(total);
+      } catch {
+        if (!cancelled) setCartCount(0);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, authed, path]);
+
   const onLogout = () => {
     clearToken();
     window.location.href = "/login";
@@ -61,7 +90,7 @@ export default function HeaderBar() {
     className,
   }: {
     href: string;
-    label: string;
+    label: React.ReactNode;
     className?: string;
   }) => {
     const active = path.startsWith(href);
@@ -103,7 +132,22 @@ export default function HeaderBar() {
         <nav className="hidden md:flex items-center gap-2 sm:gap-3">
           <NavLink href="/products" label="Produtos" />
 
-          {authed && <NavLink href="/cart" label="Carrinho" />}
+          {authed && (
+            <NavLink
+              href="/cart"
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <CartIcon className="h-5 w-5 inline-block" />
+                  <span className="sr-only">Carrinho</span>
+                  {cartCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs">
+                      {cartCount}
+                    </span>
+                  )}
+                </span>
+              }
+            />
+          )}
           {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
           {/* Botão de tema */}
@@ -184,7 +228,21 @@ export default function HeaderBar() {
         <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
           <NavLink href="/products" label="Produtos" className="w-full" />
           {authed && (
-            <NavLink href="/cart" label="Carrinho" className="w-full" />
+            <NavLink
+              href="/cart"
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <CartIcon className="h-5 w-5 inline-block" />
+                  <span className="sr-only">Carrinho</span>
+                  {cartCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs">
+                      {cartCount}
+                    </span>
+                  )}
+                </span>
+              }
+              className="w-full"
+            />
           )}
           {authed && admin && (
             <NavLink href="/admin/products" label="Admin" className="w-full" />

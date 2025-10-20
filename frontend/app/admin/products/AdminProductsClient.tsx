@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { api } from "@/lib/api";
 import axios from "axios";
-import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
+import { isAuthenticated, isAdmin } from "@/lib/auth";
 import { toast } from "sonner";
+import { EditIcon, TrashIcon } from '@/app/components/Icons';
 import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -181,30 +181,19 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleLogout = () => {
-    clearToken();
-    window.location.href = "/login";
-  };
+  // logout gerenciado pelo HeaderBar global
 
   if (!ready) return null;
 
   return (
     <main className="container mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
+      {/* Header (apenas título/descritivo); ações globais no HeaderBar */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-brand">Admin • Produtos</h1>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Gerencie catálogo, preços e estoque.
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link className="btn border border-black/10 dark:border-white/10" href="/products">
-            Loja
-          </Link>
-          <button onClick={handleLogout} className="btn btn-accent">
-            Sair
-          </button>
         </div>
       </header>
 
@@ -340,21 +329,22 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="p-3 text-slate-600 dark:text-slate-300">{p.description ?? "—"}</td>
                     <td className="p-3">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          className="btn border border-black/10 dark:border-white/10"
-                          onClick={() => startEdit(p)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
-                          disabled={removingId === p.id}
-                          onClick={() => remove(p.id)}
-                        >
-                          {removingId === p.id ? "Removendo…" : "Remover"}
-                        </button>
-                      </div>
+                              <div className="flex justify-end gap-2">
+                              <button
+                                className="inline-flex items-center gap-2 px-2 py-1 border border-black/10 rounded"
+                                onClick={() => startEdit(p)}
+                              >
+                                <EditIcon />
+                                <span className="sr-only">Editar</span>
+                              </button>
+                              <button
+                                className="inline-flex items-center gap-2 px-2 py-1 border border-red-600 text-red-600 rounded hover:bg-red-600 hover:text-white disabled:opacity-50"
+                                disabled={removingId === p.id}
+                                onClick={() => remove(p.id)}
+                              >
+                                {removingId === p.id ? 'Removendo…' : <><TrashIcon /><span className="sr-only">Remover</span></>}
+                              </button>
+                            </div>
                     </td>
                   </tr>
                 ))}
