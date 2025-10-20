@@ -104,7 +104,8 @@ export default function HeaderBar() {
 
   const onLogout = () => {
     clearToken();
-    window.location.href = "/login";
+    // After logout, go to homepage instead of forcing /login
+    window.location.href = "/";
   };
 
   const toggleTheme = () => {
@@ -244,9 +245,9 @@ export default function HeaderBar() {
           {/* cart icon (small) */}
           {authed ? (
             <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
-              <CartIcon className="h-5 w-5 text-current" />
+              <CartIcon className="h-6 w-6 text-current" />
               <span className="sr-only">Carrinho</span>
-              <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
+              <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[11px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
             </Link>
           ) : (
             <button className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5" aria-label="Carrinho">
@@ -272,7 +273,7 @@ export default function HeaderBar() {
             ) : (
               <input
                 ref={mobileSearchRef}
-                className="pl-9 pr-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm w-48"
+                className="pl-9 pr-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm w-56 transition-all duration-200 ease-in-out"
                 placeholder="Buscar produtos..."
                 value={query}
                 onChange={(e) => {

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import clsx from "clsx";
-import { CartIcon } from "@/app/components/Icons";
 
 type Props = {
   open: boolean;
@@ -16,22 +15,12 @@ type Props = {
   badgePulse: boolean;
 };
 
+import ActionIcons from './ActionIcons';
+
 export default function MobileNav({ open, setOpen, authed, admin, theme, toggleTheme, onLogout, cartCount, badgePulse }: Props) {
   return (
     <>
-      <Link
-        href="/cart"
-        className="md:hidden inline-flex items-center gap-2 mr-2 px-2 py-1 rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200"
-        aria-label="Ir para o carrinho"
-      >
-        <CartIcon className="h-5 w-5" />
-        {cartCount > 0 && (
-          <span className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs transform transition-transform ${badgePulse ? 'scale-110 shadow-md' : ''}`}>
-            {cartCount > 9 ? '9+' : cartCount}
-          </span>
-        )}
-        <span className="sr-only">Carrinho</span>
-      </Link>
+      {/* Top cart left in header now - ActionIcons will show cart */}
 
       {/* Button hamburger */}
       <div className="md:hidden">
@@ -64,18 +53,10 @@ export default function MobileNav({ open, setOpen, authed, admin, theme, toggleT
           <Link href="/products" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Produtos</Link>
           {authed && admin && <Link href="/admin/products" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Admin</Link>}
 
-          <button onClick={toggleTheme} className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10" title="Alternar tema">
-            {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
-          </button>
-
-          {!authed ? (
-            <>
-              <Link href="/login" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Login</Link>
-              <Link href="/register" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Cadastro</Link>
-            </>
-          ) : (
-            <button onClick={onLogout} className="mt-1 w-full rounded-md bg-brand px-4 py-2 text-left text-sm font-medium text-white transition hover:bg-accent" title="Sair">Sair</button>
-          )}
+          {/* Action icons inside mobile menu for consistency */}
+          <div className="pt-2">
+            <ActionIcons authed={authed} admin={admin} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} cartCount={cartCount} badgePulse={badgePulse} />
+          </div>
         </nav>
       </div>
     </>
