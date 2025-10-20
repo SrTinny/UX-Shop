@@ -194,6 +194,8 @@ export default function ProductsPage() {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
       toast.success('Item adicionado ao carrinho!');
+      // notifica header para atualizar badge
+      window.dispatchEvent(new CustomEvent('cart:updated', { detail: { delta: 1 } }));
     } catch (e: unknown) {
       setCartQty(prev); // desfaz otimista
       let msg = 'Erro ao adicionar ao carrinho';
@@ -216,6 +218,7 @@ export default function ProductsPage() {
     addGuestItem(pendingGuestProduct, 1);
     // UX: atualizar badge localmente
     setCartQty((q) => q + 1);
+    window.dispatchEvent(new CustomEvent('cart:updated', { detail: { delta: 1 } }));
     setShowLoginModal(false);
     setPendingGuestProduct(null);
   }

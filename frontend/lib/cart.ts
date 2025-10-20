@@ -43,6 +43,13 @@ export async function mergeGuestCartToServer(): Promise<boolean> {
       await api.post('/cart/items', { productId: it.productId, quantity: it.quantity });
     }
     clearGuestCart();
+    // Notifica header com contagem total adicionada (para atualizar badge)
+    const total = items.reduce((acc, it) => acc + it.quantity, 0);
+    try {
+      window.dispatchEvent(new CustomEvent('cart:updated', { detail: { delta: total } }));
+    } catch {
+      /* noop */
+    }
     return true;
   } catch {
     return false;
