@@ -47,7 +47,6 @@ function highlight(text: string, term: string) {
 
 /* ===================== Página ===================== */
 export default function ProductsPage() {
-  const [ready, setReady] = useState(false);
 
   // listagem
   const [items, setItems] = useState<Product[]>([]);
@@ -71,14 +70,7 @@ export default function ProductsPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // guarda de auth
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      window.location.href = '/login';
-    } else {
-      setReady(true);
-    }
-  }, []);
+  // página de produtos agora pública — não redirecionamos para /login aqui
 
   const fetchProducts = useCallback(
     async (opts: { term?: string; page?: number; append?: boolean } = {}) => {
@@ -115,8 +107,9 @@ export default function ProductsPage() {
         if (axios.isAxiosError(e)) {
           if (e.code === 'ERR_CANCELED') return; // usuário digitou novamente
           if (e.response?.status === 401) {
-            toast.error('Sessão expirada. Faça login novamente.');
-            window.location.href = '/login';
+            // sessão expirada: avisamos, mas não forçamos redirecionamento nesta página pública
+            toast.error('Sessão expirada. Faça login para gerenciar o carrinho.');
+            setError('Sessão expirada');
             return;
           }
           const msg =
@@ -142,7 +135,12 @@ export default function ProductsPage() {
   const fetchCartQty = useCallback(async () => {
     try {
       setCartLoading(true);
-      const res = await api.get('/cart');
+        // só tenta buscar o carrinho se o usuário estiver autenticado
+        if (!isAuthenticated()) {
+          setCartQty(0);
+          return;
+        }
+        const res = await api.get('/cart');
       const total = (res.data?.items ?? []).reduce(
         (acc: number, it: { quantity: number }) => acc + it.quantity,
         0,
@@ -155,16 +153,14 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // carga inicial
+  // carga inicial (pública): sempre buscar produtos, e buscar carrinho só se autenticado
   useEffect(() => {
-    if (!ready) return;
     void fetchProducts({ page: 1 });
     void fetchCartQty();
-  }, [ready, fetchProducts, fetchCartQty]);
+  }, [fetchProducts, fetchCartQty]);
 
   // debounce da busca (reseta paginação)
   useEffect(() => {
-    if (!ready) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(1);
@@ -173,7 +169,7 @@ export default function ProductsPage() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, ready, fetchProducts]);
+  }, [search, fetchProducts]);
 
   async function loadMore() {
     const next = page + 1;
@@ -182,6 +178,12 @@ export default function ProductsPage() {
   }
 
   async function addToCart(productId: string) {
+    // se não autenticado, direcionar para login (melhor UX)
+    if (!isAuthenticated()) {
+      window.location.href = '/login';
+      return;
+    }
+
     // update otimista do badge
     const prev = cartQty;
     setCartQty((q) => q + 1);
@@ -209,7 +211,7 @@ export default function ProductsPage() {
 
   const hasResults = useMemo(() => items.length > 0, [items]);
 
-  if (!ready) return null;
+  
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-6">
