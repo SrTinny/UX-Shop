@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 // Link removido (uso centralizado no HeaderBar)
-import Image from 'next/image'; // 👈 adicionado
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
 import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
-import { PlusIcon } from '@/app/components/Icons';
+import ProductCard from '@/app/_components/ProductCard';
 
 /* ===================== Tipos ===================== */
 type Product = {
@@ -25,29 +24,7 @@ type Product = {
 type ProductsResponse = { items?: Product[] };
 
 /* ===================== Utils ===================== */
-const formatBRL = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-
-function clsx(...args: (string | false | undefined)[]) {
-  return args.filter(Boolean).join(' ');
-}
-
-/** destaca o termo da busca no nome do produto */
-function highlight(text: string, term: string) {
-  if (!term) return text;
-  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`(${safe})`, 'ig');
-  const parts = text.split(re);
-  return parts.map((p, i) =>
-    re.test(p) ? (
-      <mark key={i} className="bg-brand/20 text-brand rounded px-0.5">
-        {p}
-      </mark>
-    ) : (
-      <span key={i}>{p}</span>
-    ),
-  );
-}
+// ProductCard handles rendering and highlighting
 
 /* ===================== Página ===================== */
 export default function ProductsPage() {
@@ -68,7 +45,7 @@ export default function ProductsPage() {
   const [cartQty, setCartQty] = useState<number>(0);
 
   // botão adicionar
-  const [addingId, setAddingId] = useState<string | null>(null);
+  // (cada ProductCard controla seu próprio estado de 'adding')
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingGuestProduct, setPendingGuestProduct] = useState<string | null>(null);
 
@@ -194,7 +171,6 @@ export default function ProductsPage() {
     setCartQty((q) => q + 1);
 
     try {
-      setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
         // notify header to refresh badge
         try {
@@ -214,7 +190,6 @@ export default function ProductsPage() {
       }
       toast.error(msg);
     } finally {
-      setAddingId(null);
     }
   }
 
@@ -290,56 +265,7 @@ export default function ProductsPage() {
         <>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((p) => (
-              <li key={p.id} className="card p-4 flex flex-col gap-3">
-                {/* Imagem */}
-                <div className="relative w-full aspect-[3/2] overflow-hidden rounded-xl bg-black/5">
-                  <Image
-                    src={p.imageUrl ?? '/placeholder.png'}
-                    alt={p.name}
-                    fill
-                    sizes="(max-width:768px) 100vw, (max-width:1024px) 50vw, 33vw"
-                    className="object-cover"
-                    // unoptimized // <- descomente para testar sem otimização
-                  />
-                </div>
-
-                {/* Texto */}
-                <div className="flex-1 min-h-20">
-                  <h3 className="font-medium">{highlight(p.name, search.trim())}</h3>
-                  {p.description && (
-                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
-                      {p.description}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <div className="font-semibold">{formatBRL(p.price)}</div>
-                    <div
-                      className={clsx(
-                        'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
-                        p.stock > 0
-                          ? 'bg-accent/10 text-accent'
-                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-                      )}
-                      title={`Estoque: ${p.stock}`}
-                    >
-                      {p.stock > 0 ? `Estoque: ${p.stock}` : 'Sem estoque'}
-                    </div>
-                  </div>
-
-                  <button
-                    disabled={p.stock <= 0 || addingId === p.id}
-                    onClick={() => addToCart(p.id)}
-                    className="inline-flex items-center gap-2 rounded-md bg-brand text-white px-3 py-2 text-sm hover:opacity-95 disabled:opacity-60"
-                    title={p.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
-                    aria-disabled={p.stock <= 0 || addingId === p.id}
-                  >
-                    {addingId === p.id ? 'Adicionando…' : <><PlusIcon className="h-4 w-4" />Adicionar</>}
-                  </button>
-                </div>
-              </li>
+              <ProductCard key={p.id} product={p} searchTerm={search} onAddToCart={addToCart} />
             ))}
           </ul>
 
