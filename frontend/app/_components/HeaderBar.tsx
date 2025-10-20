@@ -5,9 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
 import { CartIcon } from '@/app/components/Icons';
-import { api } from '@/lib/api';
 import clsx from "clsx";
-import MegaMenu from './MegaMenu';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function HeaderBar() {
   const [authed, setAuthed] = useState(false);
@@ -16,9 +15,26 @@ export default function HeaderBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
   const path = usePathname();
-  const [cartCount, setCartCount] = useState<number>(0);
-  const [badgePulse, setBadgePulse] = useState(false);
-  const pulseTimeout = useRef<number | null>(null);
+  // global search
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams?.get('search') ?? '';
+  const [query, setQuery] = useState(initialQuery);
+  const searchDebounceRef = useRef<number | null>(null);
+
+  const navigateWithQuery = (v: string) => {
+    const params = new URLSearchParams();
+    if (v.trim()) params.set('search', v.trim());
+    const qs = params.toString();
+    router.push(qs ? `/products?${qs}` : '/products');
+  };
+
+  // keep input in sync when user navigates back/forward or when searchParams change
+  useEffect(() => {
+    const s = searchParams?.get('search') ?? '';
+    setQuery(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString()]);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -44,55 +60,11 @@ export default function HeaderBar() {
     setOpen(false);
   }, [path]);
 
-  // Busca a quantidade total do carrinho (somente quando pronto e autenticado)
+  // cleanup debounce timers when unmounting
   useEffect(() => {
-    if (!ready) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        if (!isAuthenticated()) {
-          if (!cancelled) setCartCount(0);
-          return;
-        }
-        const res = await api.get('/cart');
-        const total = (res.data?.items ?? []).reduce(
-          (acc: number, it: { quantity: number }) => acc + it.quantity,
-          0,
-        );
-        if (!cancelled) setCartCount(total);
-      } catch {
-        if (!cancelled) setCartCount(0);
-      }
-    };
-    void load();
     return () => {
-      cancelled = true;
+      if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
     };
-  }, [ready, authed, path]);
-
-  // Escuta eventos de atualização do carrinho para atualizar badge reativamente
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const ce = e as CustomEvent;
-      const d = ce?.detail as { delta?: number; fullCount?: number } | undefined;
-      if (!d) return;
-      if (typeof d.fullCount === 'number') {
-        setCartCount(d.fullCount);
-        return;
-      }
-      if (d.delta !== undefined && typeof d.delta === 'number') {
-        const delta = d.delta;
-        setCartCount((prev) => Math.max(0, prev + delta));
-        // animação somente quando incrementa
-        if (delta > 0) {
-          setBadgePulse(true);
-          if (pulseTimeout.current) window.clearTimeout(pulseTimeout.current);
-          pulseTimeout.current = window.setTimeout(() => setBadgePulse(false), 260);
-        }
-      }
-    };
-    window.addEventListener('cart:updated', handler as EventListener);
-    return () => window.removeEventListener('cart:updated', handler as EventListener);
   }, []);
 
   const onLogout = () => {
@@ -107,6 +79,7 @@ export default function HeaderBar() {
     localStorage.setItem("theme", next);
   };
 
+  // keep ready guard as before
   if (!ready) return null;
 
   // Esconde HeaderBar na tela de login
@@ -156,56 +129,53 @@ export default function HeaderBar() {
           UX Software
         </Link>
 
+        {/* Search input placed in the header (desktop) */}
+        <div className="hidden md:block flex-1 px-4">
+          <div className="relative">
+            <input
+              id="header-search-input"
+              data-header-search="true"
+              className="w-80 pl-9 pr-3 py-2 rounded-md border border-brand bg-white text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
+              placeholder="Buscar produtos..."
+              value={query}
+              onChange={(e) => {
+                const v = e.target.value;
+                setQuery(v);
+                if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = window.setTimeout(() => {
+                  navigateWithQuery(v);
+                  searchDebounceRef.current = null;
+                }, 450);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                  navigateWithQuery(query);
+                }
+              }}
+              aria-label="Buscar produtos"
+            />
+            <svg aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+
         {/* Botões à direita (desktop) */}
         <nav className="hidden md:flex items-center gap-2 sm:gap-3">
-          <div className="group relative">
-            <NavLink href="/products" label={<>Produtos</>} />
-            <MegaMenu
-              columns={[
-                { title: 'Notebooks', links: [{ label: 'Gamer', href: '/products/notebooks/gamer' }, { label: 'Ultrabook', href: '/products/notebooks/ultrabook' }] },
-                { title: 'Periféricos', links: [{ label: 'Teclados', href: '/products/perifericos/teclados' }, { label: 'Mouses', href: '/products/perifericos/mouses' }] },
-                { title: 'Monitores', links: [{ label: '144Hz', href: '/products/monitores/144hz' }, { label: '4K', href: '/products/monitores/4k' }] },
-              ]}
-              highlight={{ title: 'Promo do mês', href: '/promocoes', image: '/placeholder.png' }}
-            />
-          </div>
+          <NavLink href="/products" label="Produtos" />
 
-          {authed && (
-            <NavLink
-              href="/cart"
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <CartIcon className="h-5 w-5 inline-block" />
-                  <span className="sr-only">Carrinho</span>
-                  {cartCount > 0 && (
-                    <span
-                      className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs transform transition-transform ${badgePulse ? 'scale-110 shadow-md' : ''}`}
-                    >
-                      {cartCount > 9 ? '9+' : cartCount}
-                    </span>
-                  )}
-                </span>
-              }
-            />
-          )}
+          {authed && <NavLink href="/cart" label={<> <CartIcon className="h-5 w-5 inline-block mr-2"/> Carrinho</>} />}
           {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
-          {/* Botão de tema (ícone) */}
+          {/* Botão de tema */}
           <button
             onClick={toggleTheme}
             className="rounded-md border border-black/10 dark:border-white/10 px-3 py-2 text-sm"
             title="Alternar tema"
           >
-            {theme === 'light' ? (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            )}
+            {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
           </button>
 
           {!authed ? (
@@ -223,23 +193,6 @@ export default function HeaderBar() {
             </button>
           )}
         </nav>
-
-        {/* Botão do carrinho (mobile) - colocado ao lado do hambúrguer */}
-        <Link
-          href="/cart"
-          className="md:hidden inline-flex items-center gap-2 mr-2 px-2 py-1 rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200"
-          aria-label="Ir para o carrinho"
-        >
-          <CartIcon className="h-5 w-5" />
-                  {cartCount > 0 && (
-                    <span
-                      className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-brand text-white text-xs transform transition-transform ${badgePulse ? 'scale-110 shadow-md' : ''}`}
-                    >
-                      {cartCount > 9 ? '9+' : cartCount}
-                    </span>
-                  )}
-          <span className="sr-only">Carrinho</span>
-        </Link>
 
         {/* Botão hambúrguer (mobile) */}
         <div className="md:hidden">
@@ -292,7 +245,41 @@ export default function HeaderBar() {
         style={{ borderColor: "var(--color-border)" }}
       >
         <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
+          {/* Mobile search */}
+          <div className="mb-2">
+            <div className="relative">
+              <input
+                className="input-base w-full pl-9"
+                placeholder="Buscar produtos..."
+                value={query}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setQuery(v);
+                  if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                  searchDebounceRef.current = window.setTimeout(() => {
+                    navigateWithQuery(v);
+                    searchDebounceRef.current = null;
+                  }, 450);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                    navigateWithQuery(query);
+                    setOpen(false);
+                  }
+                }}
+                aria-label="Buscar produtos"
+              />
+              <svg aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
           <NavLink href="/products" label="Produtos" className="w-full" />
+          {authed && (
+            <NavLink href="/cart" label={<> <CartIcon className="h-5 w-5 inline-block mr-2"/> Carrinho</>} className="w-full" />
+          )}
           {authed && admin && (
             <NavLink href="/admin/products" label="Admin" className="w-full" />
           )}

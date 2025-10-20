@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 // Link removido (uso centralizado no HeaderBar)
 import Image from 'next/image'; // 👈 adicionado
 import axios from 'axios';
@@ -53,6 +54,7 @@ export default function ProductsPage() {
 
   // listagem
   const [items, setItems] = useState<Product[]>([]);
+  // search agora vem da query string
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,11 +72,24 @@ export default function ProductsPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingGuestProduct, setPendingGuestProduct] = useState<string | null>(null);
 
-  // debounce + cancelamento
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // cancelamento
   const abortRef = useRef<AbortController | null>(null);
 
   // página de produtos agora pública — não redirecionamos para /login aqui
+
+  // sincroniza `search` com o query param (quando o header navega para /products?search=...)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    try {
+      const q = searchParams?.get('search') ?? '';
+      setSearch(q);
+      // busca imediata quando a query string muda
+      void fetchProducts({ term: q.trim(), page: 1 });
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString()]);
 
   const fetchProducts = useCallback(
     async (opts: { term?: string; page?: number; append?: boolean } = {}) => {
@@ -154,23 +169,11 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // carga inicial (pública): sempre buscar produtos, e buscar carrinho só se autenticado
+  // carga inicial (pública): buscar carrinho só se autenticado
   useEffect(() => {
-    void fetchProducts({ page: 1 });
     void fetchCartQty();
-  }, [fetchProducts, fetchCartQty]);
-
-  // debounce da busca (reseta paginação)
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setPage(1);
-      void fetchProducts({ term: search.trim(), page: 1 });
-    }, 450);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search, fetchProducts]);
+    // nota: a busca de produtos será disparada pelo efeito de `searchParams` acima
+  }, [fetchCartQty]);
 
   async function loadMore() {
     const next = page + 1;
@@ -194,8 +197,6 @@ export default function ProductsPage() {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
       toast.success('Item adicionado ao carrinho!');
-      // notifica header para atualizar badge
-      window.dispatchEvent(new CustomEvent('cart:updated', { detail: { delta: 1 } }));
     } catch (e: unknown) {
       setCartQty(prev); // desfaz otimista
       let msg = 'Erro ao adicionar ao carrinho';
@@ -218,7 +219,6 @@ export default function ProductsPage() {
     addGuestItem(pendingGuestProduct, 1);
     // UX: atualizar badge localmente
     setCartQty((q) => q + 1);
-    window.dispatchEvent(new CustomEvent('cart:updated', { detail: { delta: 1 } }));
     setShowLoginModal(false);
     setPendingGuestProduct(null);
   }
@@ -245,48 +245,7 @@ export default function ProductsPage() {
         <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
       </header>
 
-      {/* Busca */}
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setPage(1);
-          void fetchProducts({ term: search.trim(), page: 1 });
-        }}
-      >
-        <div className="relative flex-1">
-          <input
-            className="input-base pl-9"
-            placeholder="Buscar por nome…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Buscar produtos por nome"
-          />
-          {/* ícone */}
-          <svg
-            aria-hidden
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn btn-primary"
-          title="Buscar"
-          aria-busy={loading}
-        >
-          {loading ? 'Buscando…' : 'Buscar'}
-        </button>
-      </form>
+      {/* Busca agora no header; removido formulário local para evitar duplicação */}
 
       {/* Mensagem de erro */}
       {error && (
