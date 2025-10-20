@@ -7,7 +7,6 @@ type Props = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   authed: boolean;
-  admin: boolean;
   theme: "light" | "dark";
   toggleTheme: () => void;
   onLogout: () => void;
@@ -16,82 +15,72 @@ type Props = {
 
 import navigation from '@/lib/navigation';
 
-export default function MobileNav({ open, setOpen, authed, admin, theme, toggleTheme, onLogout }: Props) {
+export default function MobileNav({ open, setOpen, authed, theme, toggleTheme, onLogout }: Props) {
   return (
     <>
-      {/* Top cart left in header now - ActionIcons will show cart */}
+      {/* Drawer overlay - visible when open */}
+      <div
+        aria-hidden={!open}
+        className={clsx(
+          "fixed inset-0 bg-black/40 transition-opacity duration-300 z-40",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={() => setOpen(false)}
+      />
 
-      {/* Button hamburger */}
-      <div className="md:hidden">
-        <button
-          type="button"
-          aria-label="Abrir menu"
-          aria-expanded={open}
-          aria-controls="mobile-menu"
-          onClick={() => setOpen((s) => !s)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10"
-        >
-          {open ? (
+      {/* Drawer panel */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        className={clsx(
+          "fixed top-0 left-0 h-full w-72 max-w-full bg-white dark:bg-[#071022] shadow-xl transform transition-transform duration-300 z-50",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-white/10" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="text-lg font-semibold text-brand">Menu</div>
+          <button aria-label="Fechar menu" onClick={() => setOpen(false)} className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-          ) : (
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          )}
-        </button>
-      </div>
+          </button>
+        </div>
 
-      {/* Mobile menu panel */}
-      <div id="mobile-menu" className={clsx("md:hidden border-t", open ? "block" : "hidden")} style={{ borderColor: "var(--color-border)" }}>
-        <nav className="container mx-auto flex flex-col gap-1 px-4 sm:px-6 lg:px-8 py-3">
+        <nav className="px-4 py-4 overflow-y-auto h-[calc(100%-56px)]">
           {navigation.map((item) => (
             item.children ? (
-              <div key={item.label} className="w-full">
-                <div className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">{item.label}</div>
-                <div className="pl-4">
+              <div key={item.label} className="mb-3">
+                <div className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-300">{item.label}</div>
+                <div className="pl-3">
                   {item.children.map((sub) => (
                     <Link key={sub.label} href={sub.href} className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">{sub.label}</Link>
                   ))}
                 </div>
               </div>
             ) : (
-              <Link key={item.label} href={item.href ?? '#'} className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">{item.label}</Link>
+              <Link key={item.label} href={item.href ?? '#'} className="block w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand mb-1">{item.label}</Link>
             )
           ))}
 
-          {authed && admin && <Link href="/admin/products" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Admin</Link>}
-
-          {/* Theme toggle and account actions */}
-          <button
-            onClick={toggleTheme}
-            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10 flex items-center gap-2"
-            title="Alternar tema"
-          >
-            <span className="text-lg">{theme === "light" ? '🌙' : '☀️'}</span>
-            <span className="sr-only">Alternar tema</span>
-          </button>
-
-          {!authed ? (
-            <>
-              <Link href="/login" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Login</Link>
-              <Link href="/register" className="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand">Cadastro</Link>
-            </>
-          ) : (
-            <button
-              onClick={onLogout}
-              className="mt-1 w-full rounded-md bg-brand px-4 py-2 text-left text-sm font-medium text-white transition hover:bg-accent"
-              title="Sair"
-            >
-              Sair
+          <div className="mt-2">
+            <button onClick={toggleTheme} className="w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10">
+              {theme === 'light' ? '🌙 Tema escuro' : '☀️ Tema claro'}
             </button>
-          )}
+          </div>
+
+          <div className="mt-3">
+            {!authed ? (
+              <>
+                <Link href="/login" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Login</Link>
+                <Link href="/register" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Cadastro</Link>
+              </>
+            ) : (
+              <button onClick={onLogout} className="w-full rounded-md bg-brand px-3 py-2 text-left text-sm font-medium text-white">Sair</button>
+            )}
+          </div>
         </nav>
-      </div>
+      </aside>
     </>
   );
 }

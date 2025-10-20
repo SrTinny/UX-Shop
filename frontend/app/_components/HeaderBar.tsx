@@ -129,6 +129,7 @@ export default function HeaderBar() {
   const cartBadge = cartCount > 9 ? '+9' : String(cartCount);
 
   return (
+    <>
     <header
       className="sticky top-0 z-40 border-b shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-[#0b0f1a]/70"
       style={{
@@ -255,26 +256,21 @@ export default function HeaderBar() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             onClick={() => setOpen((s) => !s)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-black/10 text-gray-700 transition hover:bg-black/5 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/10 ${open ? 'invisible pointer-events-none' : ''}`}
           >
-            {open ? (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            )}
+            {/* Always render hamburger here; drawer provides its own close button */}
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           </button>
         </div>
       </div>
-
-      {/* Mobile menu managed by MobileNav component */}
-      <MobileNav open={open} setOpen={setOpen} authed={authed} admin={admin} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />
     </header>
+
+    {/* Mobile menu managed by MobileNav component (rendered outside header to avoid stacking issues) */}
+    <MobileNav open={open} setOpen={setOpen} authed={authed} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />
+    </>
   );
 }
