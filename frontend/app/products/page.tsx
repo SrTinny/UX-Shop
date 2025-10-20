@@ -6,6 +6,8 @@ import Image from 'next/image'; // 👈 adicionado
 import axios from 'axios';
 import { api } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
+import { addGuestItem } from '@/lib/cart';
+import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
 
 /* ===================== Tipos ===================== */
@@ -65,6 +67,8 @@ export default function ProductsPage() {
 
   // botão adicionar
   const [addingId, setAddingId] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingGuestProduct, setPendingGuestProduct] = useState<string | null>(null);
 
   // debounce + cancelamento
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -178,9 +182,10 @@ export default function ProductsPage() {
   }
 
   async function addToCart(productId: string) {
-    // se não autenticado, direcionar para login (melhor UX)
+    // se não autenticado, abrir modal para escolher login ou continuar como convidado
     if (!isAuthenticated()) {
-      window.location.href = '/login';
+      setPendingGuestProduct(productId);
+      setShowLoginModal(true);
       return;
     }
 
@@ -209,12 +214,32 @@ export default function ProductsPage() {
     }
   }
 
+  function handleContinueGuest() {
+    if (!pendingGuestProduct) return;
+    addGuestItem(pendingGuestProduct, 1);
+    // UX: atualizar badge localmente
+    setCartQty((q) => q + 1);
+    setShowLoginModal(false);
+    setPendingGuestProduct(null);
+  }
+
+  function handleLoginNow() {
+    // vai para a página de login; após login o cliente deve mesclar o guest cart
+    window.location.href = '/login';
+  }
+
   const hasResults = useMemo(() => items.length > 0, [items]);
 
   
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-6">
+      <LoginModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLoginNow}
+        onContinueGuest={handleContinueGuest}
+      />
       {/* Top bar local */}
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-brand">Produtos</h1>

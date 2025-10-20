@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { mergeGuestCartToServer } from '@/lib/cart';
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -31,6 +32,12 @@ export default function LoginPage() {
       if (token) {
         localStorage.setItem("token", token);
         toast.success("Login efetuado!");
+        // tentar mesclar guest cart antes de redirecionar
+        try {
+          await mergeGuestCartToServer();
+        } catch {
+          // se falhar, continua normalmente
+        }
         window.location.href = "/products";
       } else {
         const msg = "Token não recebido.";
