@@ -196,6 +196,10 @@ export default function ProductsPage() {
     try {
       setAddingId(productId);
       await api.post('/cart/items', { productId, quantity: 1 });
+        // notify header to refresh badge
+        try {
+          window.dispatchEvent(new CustomEvent('cart:updated'));
+        } catch {}
       toast.success('Item adicionado ao carrinho!');
     } catch (e: unknown) {
       setCartQty(prev); // desfaz otimista
@@ -219,6 +223,9 @@ export default function ProductsPage() {
     addGuestItem(pendingGuestProduct, 1);
     // UX: atualizar badge localmente
     setCartQty((q) => q + 1);
+    try {
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+    } catch {}
     setShowLoginModal(false);
     setPendingGuestProduct(null);
   }

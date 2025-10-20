@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
+import { api } from '@/lib/api';
 import { CartIcon } from '@/app/components/Icons';
 import clsx from "clsx";
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,6 +16,7 @@ export default function HeaderBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
   const path = usePathname();
+  const [cartCount, setCartCount] = useState<number>(0);
   // global search
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,6 +55,37 @@ export default function HeaderBar() {
       setTheme(prefersDark ? "dark" : "light");
       document.documentElement.classList.toggle("dark", prefersDark);
     }
+  }, []);
+
+  // busca quantidade do carrinho quando o header monta
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        if (!isAuthenticated()) {
+          setCartCount(0);
+          return;
+        }
+        const res = await api.get('/cart');
+        if (!mounted) return;
+        const data = res.data;
+        const total = (data?.items ?? []).reduce((acc: number, it: { quantity: number }) => acc + it.quantity, 0);
+        setCartCount(total ?? 0);
+      } catch {
+        if (mounted) setCartCount(0);
+      }
+    }
+    void load();
+
+    const onCartUpdated = () => void load();
+    window.addEventListener('cart:updated', onCartUpdated as EventListener);
+    const onFocus = () => void load();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      mounted = false;
+      window.removeEventListener('cart:updated', onCartUpdated as EventListener);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   // Fecha o menu quando a rota muda
@@ -112,6 +145,9 @@ export default function HeaderBar() {
     );
   };
 
+  // compute badge text
+  const cartBadge = cartCount > 9 ? '+9' : String(cartCount);
+
   return (
     <header
       className="sticky top-0 z-40 border-b shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-[#0b0f1a]/70"
@@ -135,7 +171,8 @@ export default function HeaderBar() {
             <input
               id="header-search-input"
               data-header-search="true"
-              className="w-80 pl-9 pr-3 py-2 rounded-md border border-brand bg-white text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
+              className="w-80 pl-9 pr-3 py-2 rounded-md border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
+              style={theme === 'light' ? { backgroundColor: '#ffffff', color: '#0f172a' } : undefined}
               placeholder="Buscar produtos..."
               value={query}
               onChange={(e) => {
@@ -156,7 +193,7 @@ export default function HeaderBar() {
               }}
               aria-label="Buscar produtos"
             />
-            <svg aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd" />
             </svg>
           </div>
@@ -166,16 +203,23 @@ export default function HeaderBar() {
         <nav className="hidden md:flex items-center gap-2 sm:gap-3">
           <NavLink href="/products" label="Produtos" />
 
-          {authed && <NavLink href="/cart" label={<> <CartIcon className="h-5 w-5 inline-block mr-2"/> Carrinho</>} />}
+          {authed && (
+            <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+              <CartIcon className="h-5 w-5 text-current" />
+              <span className="sr-only">Carrinho</span>
+              <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
+            </Link>
+          )}
           {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
-          {/* Botão de tema */}
+          {/* Botão de tema (ícone apenas) */}
           <button
             onClick={toggleTheme}
-            className="rounded-md border border-black/10 dark:border-white/10 px-3 py-2 text-sm"
+            className="rounded-md border border-black/10 dark:border-white/10 p-2"
             title="Alternar tema"
           >
-            {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
+            {theme === "light" ? '🌙' : '☀️'}
+            <span className="sr-only">Alternar tema</span>
           </button>
 
           {!authed ? (
@@ -249,7 +293,8 @@ export default function HeaderBar() {
           <div className="mb-2">
             <div className="relative">
               <input
-                className="input-base w-full pl-9"
+                className="input-base w-full pl-9 border border-gray-200 rounded-md"
+                style={theme === 'light' ? { backgroundColor: '#ffffff', color: '#0f172a' } : undefined}
                 placeholder="Buscar produtos..."
                 value={query}
                 onChange={(e) => {
@@ -278,7 +323,11 @@ export default function HeaderBar() {
           </div>
           <NavLink href="/products" label="Produtos" className="w-full" />
           {authed && (
-            <NavLink href="/cart" label={<> <CartIcon className="h-5 w-5 inline-block mr-2"/> Carrinho</>} className="w-full" />
+            <Link href="/cart" className="relative flex items-center gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 w-full">
+              <CartIcon className="h-5 w-5 text-current" />
+              <span className="sr-only">Carrinho</span>
+              <span className="absolute -top-1 -right-3 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
+            </Link>
           )}
           {authed && admin && (
             <NavLink href="/admin/products" label="Admin" className="w-full" />
@@ -286,10 +335,11 @@ export default function HeaderBar() {
 
           <button
             onClick={toggleTheme}
-            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10"
+            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10 flex items-center gap-2"
             title="Alternar tema"
           >
-            {theme === "light" ? "🌙 Escuro" : "☀️ Claro"}
+            <span className="text-lg">{theme === "light" ? '🌙' : '☀️'}</span>
+            <span className="sr-only">Alternar tema</span>
           </button>
 
           {!authed ? (
