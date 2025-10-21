@@ -5,8 +5,9 @@ import { api } from "@/lib/api";
 import axios from "axios";
 import { isAuthenticated, isAdmin } from "@/lib/auth";
 import { toast } from "sonner";
-import { EditIcon, TrashIcon } from '@/app/components/Icons';
 import ProductFormModal from './ProductFormModal';
+import ProductAdminCard from './ProductAdminCard';
+import ProductTableRow from './ProductTableRow';
 
 type Product = {
   id: string;
@@ -19,16 +20,7 @@ type Product = {
   imageUrl?: string | null;
 };
 
-/* ===== Helpers ===== */
-const formatBRL = (n: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
-
-const formatDate = (iso?: string) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(d);
-};
+/* helpers removed: moved to row/card components */
 
 export default function AdminProductsPage() {
   const [ready, setReady] = useState(false);
@@ -184,40 +176,7 @@ export default function AdminProductsPage() {
       {!loading && items.length > 0 && (
         <section className="grid gap-3 md:hidden">
           {items.map((p) => (
-            <article
-              key={p.id}
-              className="card p-4 space-y-2"
-              aria-label={`Produto ${p.name}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-semibold leading-tight">{p.name}</h3>
-                <span className="text-sm text-slate-600 dark:text-slate-300">
-                  {formatDate(p.updatedAt ?? p.createdAt)}
-                </span>
-              </div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">
-                {p.description ?? "—"}
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-brand font-semibold">{formatBRL(p.price)}</span>
-                <span className="text-sm text-slate-600 dark:text-slate-300">Estoque: {p.stock}</span>
-              </div>
-              <div className="flex flex-wrap justify-end gap-2 pt-2">
-                <button
-                  className="btn border border-black/10 dark:border-white/10"
-                  onClick={() => startEdit(p)}
-                >
-                  Editar
-                </button>
-                <button
-                  className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
-                  disabled={removingId === p.id}
-                  onClick={() => remove(p.id)}
-                >
-                  {removingId === p.id ? "Removendo…" : "Remover"}
-                </button>
-              </div>
-            </article>
+            <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
           ))}
         </section>
       )}
@@ -228,6 +187,7 @@ export default function AdminProductsPage() {
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
               <tr className="[&>th]:p-3 [&>th]:text-left [&>th]:font-semibold text-slate-700 dark:text-slate-200">
+                <th>Imagem</th>
                 <th>Nome</th>
                 <th>Preço</th>
                 <th>Estoque</th>
@@ -272,33 +232,7 @@ export default function AdminProductsPage() {
 
               {!loading &&
                 items.map((p) => (
-                  <tr key={p.id} className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
-                    <td className="p-3 font-medium">{p.name}</td>
-                    <td className="p-3">{formatBRL(p.price)}</td>
-                    <td className="p-3">{p.stock}</td>
-                    <td className="hidden p-3 text-slate-600 dark:text-slate-300 lg:table-cell">
-                      {formatDate(p.updatedAt ?? p.createdAt)}
-                    </td>
-                    <td className="p-3 text-slate-600 dark:text-slate-300">{p.description ?? "—"}</td>
-                    <td className="p-3">
-                              <div className="flex justify-end gap-2">
-                              <button
-                                className="inline-flex items-center gap-2 px-2 py-1 border border-black/10 rounded"
-                                onClick={() => startEdit(p)}
-                              >
-                                <EditIcon />
-                                <span className="sr-only">Editar</span>
-                              </button>
-                              <button
-                                className="inline-flex items-center gap-2 px-2 py-1 border border-red-600 text-red-600 rounded hover:bg-red-600 hover:text-white disabled:opacity-50"
-                                disabled={removingId === p.id}
-                                onClick={() => remove(p.id)}
-                              >
-                                {removingId === p.id ? 'Removendo…' : <><TrashIcon /><span className="sr-only">Remover</span></>}
-                              </button>
-                            </div>
-                    </td>
-                  </tr>
+                  <ProductTableRow key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
                 ))}
             </tbody>
           </table>
