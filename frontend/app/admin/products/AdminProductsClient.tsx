@@ -1,14 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import axios from "axios";
 import { isAuthenticated, isAdmin } from "@/lib/auth";
 import { toast } from "sonner";
 import { EditIcon, TrashIcon } from '@/app/components/Icons';
-import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import ProductFormModal from './ProductFormModal';
 
 type Product = {
   id: string;
@@ -20,16 +18,6 @@ type Product = {
   updatedAt?: string;
   imageUrl?: string | null;
 };
-
-/** Validação: z.coerce.number transforma string -> number automaticamente */
-const productSchema = z.object({
-  name: z.string().min(1, "Nome obrigatório"),
-  description: z.string().optional(),
-  price: z.coerce.number().nonnegative("Preço inválido"),
-  stock: z.coerce.number().int("Estoque deve ser inteiro").nonnegative("Estoque inválido"),
-  imageUrl: z.string().url("URL inválida").optional(),
-});
-type ProductFormData = z.infer<typeof productSchema>;
 
 /* ===== Helpers ===== */
 const formatBRL = (n: number) =>
@@ -47,8 +35,8 @@ export default function AdminProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -66,15 +54,7 @@ export default function AdminProductsPage() {
     setReady(true);
   }, []);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormData>,
-    defaultValues: { name: "", description: "", price: 0, stock: 0, imageUrl: "" },
-  });
+
 
   // Debounce da busca
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -113,51 +93,23 @@ export default function AdminProductsPage() {
     if (ready) void load();
   }, [ready, load]);
 
-  const isEditMode = useMemo(() => !!editing, [editing]);
+  
 
   function startCreate() {
     setEditing(null);
-    reset({ name: "", description: "", price: 0, stock: 0 });
-    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setModalOpen(true);
   }
 
   function startEdit(p: Product) {
     setEditing(p);
-    reset({
-      name: p.name,
-      description: p.description ?? "",
-      price: p.price,
-      stock: p.stock,
-      imageUrl: p.imageUrl ?? "",
-    });
-    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setModalOpen(true);
   }
 
-  const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
-    try {
-      setSaving(true);
-      if (isEditMode && editing) {
-        await api.put(`/products/${editing.id}`, data);
-        toast.success("Produto atualizado");
-      } else {
-        await api.post("/products", data);
-        toast.success("Produto criado");
-      }
-      setEditing(null);
-      reset({ name: "", description: "", price: 0, stock: 0 });
-      await load();
-    } catch (e: unknown) {
-      let msg = isEditMode ? "Erro ao atualizar" : "Erro ao criar";
-      if (axios.isAxiosError(e)) {
-        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
-      } else if (e instanceof Error) {
-        msg = e.message;
-      }
-      toast.error(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // onSaveSuccess: usado pelo modal para fechar + reload
+  function handleSaveSuccess() {
+    setModalOpen(false);
+    void load();
+  }
 
   async function remove(id: string) {
     if (!confirm("Remover produto?")) return;
@@ -353,83 +305,8 @@ export default function AdminProductsPage() {
         </div>
       </section>
 
-      {/* Form de Create/Update */}
-      <section id="product-form" className="card p-5">
-        <h2 className="mb-4 text-lg font-semibold">
-          {isEditMode ? "Editar produto" : "Novo produto"}
-        </h2>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm" htmlFor="name">
-              Nome
-            </label>
-            <input id="name" className="input-base" {...register("name")} />
-            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm" htmlFor="price">
-              Preço
-            </label>
-            <input id="price" className="input-base" type="number" step="0.01" {...register("price")} />
-            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price.message}</p>}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm" htmlFor="stock">
-              Estoque
-            </label>
-            <input id="stock" className="input-base" type="number" {...register("stock")} />
-            {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm" htmlFor="description">
-              Descrição
-            </label>
-            <textarea id="description" className="input-base" rows={3} {...register("description")} />
-            {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm" htmlFor="imageUrl">
-              Link da imagem
-            </label>
-            <input
-              id="imageUrl"
-              className="input-base"
-              type="url"
-              placeholder="https://exemplo.com/imagem.jpg"
-              {...register("imageUrl")}
-            />
-            {errors.imageUrl && <p className="mt-1 text-xs text-red-600">{errors.imageUrl.message}</p>}
-          </div>
-
-          <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
-            <button
-              disabled={isSubmitting || saving}
-              className="btn btn-primary"
-              aria-disabled={isSubmitting || saving}
-            >
-              {isSubmitting || saving ? (isEditMode ? "Salvando…" : "Criando…") : isEditMode ? "Salvar alterações" : "Criar"}
-            </button>
-
-            {isEditMode && (
-              <button
-                type="button"
-                className="btn border border-black/10 dark:border-white/10"
-                onClick={() => {
-                  setEditing(null);
-                  reset({ name: "", description: "", price: 0, stock: 0 });
-                }}
-              >
-                Cancelar edição
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
+      {/* Product form moved to modal */}
+      <ProductFormModal open={modalOpen} onClose={() => setModalOpen(false)} editingProduct={editing} onSaveSuccess={handleSaveSuccess} />
     </main>
   );
 }
