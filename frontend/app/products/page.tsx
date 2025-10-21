@@ -11,6 +11,7 @@ import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
 import ProductCard from '@/app/_components/ProductCard';
 import FilterBar from '@/app/_components/FilterBar';
+import useIntersectionObserver from '@/app/_components/useIntersectionObserver';
 
 /* ===================== Tipos ===================== */
 type Product = {
@@ -56,6 +57,9 @@ export default function ProductsPage() {
 
   // cancelamento
   const abortRef = useRef<AbortController | null>(null);
+
+  // sentinel para scroll infinito
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // página de produtos agora pública — não redirecionamos para /login aqui
 
@@ -183,11 +187,26 @@ export default function ProductsPage() {
     // nota: a busca de produtos será disparada pelo efeito de `searchParams` acima
   }, [fetchCartQty]);
 
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loading) return;
     const next = page + 1;
     setPage(next);
     await fetchProducts({ term: search.trim(), page: next, append: true });
-  }
+  }, [hasMore, loading, page, fetchProducts, search]);
+
+  const handleIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const e = entries[0];
+      if (!e) return;
+      if (e.isIntersecting && hasMore && !loading) {
+        void loadMore();
+      }
+    },
+    [hasMore, loading, loadMore],
+  );
+
+  // observa o sentinel quando houver mais e não estiver carregando
+  useIntersectionObserver({ target: sentinelRef, onIntersect: handleIntersect, enabled: hasMore && !loading });
 
   async function addToCart(productId: string) {
     // se não autenticado, abrir modal para escolher login ou continuar como convidado
@@ -333,18 +352,15 @@ export default function ProductsPage() {
             ))}
           </ul>
 
-          {/* Paginação / Carregar mais */}
-          {hasMore && (
-            <div className="flex justify-center">
-              <button
-                onClick={loadMore}
-                className="btn border border-black/10 dark:border-white/10 mt-2"
-                disabled={loading}
-              >
-                {loading ? 'Carregando…' : 'Carregar mais'}
-              </button>
-            </div>
-          )}
+          {/* Paginação: scroll infinito usando IntersectionObserver */}
+          <div aria-hidden>
+            {hasMore && (
+              <div className="flex justify-center mt-2">
+                {/* sentinel: invisível, observado para trigger de carregamento */}
+                <div ref={sentinelRef} style={{ width: '1px', height: '1px' }} />
+              </div>
+            )}
+          </div>
         </>
       )}
     </main>
