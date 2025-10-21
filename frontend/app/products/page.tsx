@@ -23,7 +23,8 @@ type Product = {
   imageUrl?: string | null; // 👈 adicionado
 };
 
-type ProductsResponse = { items?: Product[] };
+// resposta da API inclui total
+type ProductsResponseFull = { items?: Product[]; total?: number };
 
 /* ===================== Utils ===================== */
 // ProductCard handles rendering and highlighting
@@ -42,6 +43,7 @@ export default function ProductsPage() {
   const PER_PAGE = 20;
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number>(0);
 
   // filtros e ordenação
   const [sort, setSort] = useState<string>('relevance');
@@ -99,13 +101,15 @@ export default function ProductsPage() {
 
   // params usados na chamada
 
-        const res = await api.get<ProductsResponse>('/products', {
+        const res = await api.get<ProductsResponseFull>('/products', {
           params,
           signal: ctrl.signal as AbortSignal,
         });
 
-        const list = res.data.items ?? [];
-        setHasMore(list.length === PER_PAGE);
+  const list = res.data.items ?? [];
+  const totalRes = Number(res.data?.total ?? 0);
+  setHasMore(list.length === PER_PAGE);
+  setTotal(totalRes);
 
         if (append) {
           setItems((prev) => [...prev, ...list]);
@@ -262,6 +266,16 @@ export default function ProductsPage() {
 
   const hasResults = useMemo(() => items.length > 0, [items]);
 
+  function clearFilters() {
+    setSearch('');
+    setSort('relevance');
+    setCategory('');
+    setPage(1);
+    const params = new URLSearchParams();
+    router.replace(`${pathname}?${params.toString()}`);
+    void fetchProducts({ term: '', page: 1, sort: 'relevance', category: '' });
+  }
+
   
 
   return (
@@ -272,15 +286,16 @@ export default function ProductsPage() {
         onLogin={handleLoginNow}
         onContinueGuest={handleContinueGuest}
       />
-      {/* Top bar local (apenas título) */}
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
+      {/* Header: título e contador */}
+      <header className="flex items-start justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
+          <div className="text-sm text-slate-600">Exibindo {items.length} de {total} produtos</div>
+        </div>
       </header>
 
-      {/* Busca agora no header; removido formulário local para evitar duplicação */}
-
-      {/* Filter bar: sort and category selectors */}
-      <div className="mb-4">
+      {/* Filter bar em linha separada (full width) */}
+      <div className="w-full mb-4">
         <FilterBar
           sort={sort}
           category={category}
@@ -337,9 +352,14 @@ export default function ProductsPage() {
       {/* Estado vazio */}
       {!loading && !error && !hasResults && (
         <div className="card p-8 text-center">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Nenhum produto encontrado. Tente outra busca.
+          <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+            Nenhum produto encontrado para os filtros aplicados. Tente limpar os filtros ou alterar a busca.
           </p>
+          <div className="flex justify-center">
+            <button onClick={clearFilters} className="btn border border-black/10 dark:border-white/10">
+              Limpar filtros
+            </button>
+          </div>
         </div>
       )}
 
