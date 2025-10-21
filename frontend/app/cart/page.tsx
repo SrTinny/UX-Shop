@@ -46,9 +46,6 @@ export default function CartPage() {
       setError(null);
       const res = await api.get('/cart');
       setCart(res.data as Cart);
-      // atualiza badge global
-      const full = (res.data as Cart).items.reduce((acc, it) => acc + it.quantity, 0);
-      window.dispatchEvent(new CustomEvent('cart:updated', { detail: { fullCount: full } }));
       if ((res.data as Cart).items.length === 0) {
         toast.info('Seu carrinho está vazio.');
       }
@@ -95,8 +92,6 @@ export default function CartPage() {
       setSavingId(item.id);
       await api.patch(`/cart/items/${item.id}`, { quantity: nextQty });
       await load();
-        // load() já emite fullCount, mas garante caso necessário
-        // (evento emitido por load)
       toast.success('Quantidade atualizada');
     } catch (e: unknown) {
       let msg = 'Erro ao atualizar item';
@@ -120,7 +115,6 @@ export default function CartPage() {
       await api.delete(`/cart/items/${itemId}`);
       await load();
       toast.success('Item removido');
-      // load() emite fullCount
     } catch (e: unknown) {
       let msg = 'Erro ao remover item';
       if (axios.isAxiosError(e)) {
@@ -143,7 +137,6 @@ export default function CartPage() {
       await api.delete('/cart');
       await load();
       toast.success('Carrinho limpo');
-      // load() emite fullCount
     } catch (e: unknown) {
       let msg = 'Erro ao limpar carrinho';
       if (axios.isAxiosError(e)) {

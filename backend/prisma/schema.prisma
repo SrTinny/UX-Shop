@@ -13,6 +13,11 @@ enum Role {
   ADMIN
 }
 
+enum ProductTag {
+  PROMOCAO
+  NOVO
+}
+
 model User {
   id              String   @id @default(uuid())
   name            String
@@ -35,6 +40,7 @@ model Product {
   price       Float
   stock       Int        @default(0)
   imageUrl    String?
+  tag         ProductTag?
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   cartItems   CartItem[]

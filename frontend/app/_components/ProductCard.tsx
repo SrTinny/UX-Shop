@@ -11,6 +11,7 @@ type Product = {
   price: number;
   stock: number;
   imageUrl?: string | null;
+  tag?: 'Promoção' | 'Novo';
 };
 
 const formatBRL = (v: number) =>
@@ -56,8 +57,20 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
   };
 
   return (
-    <li className="card p-4 flex flex-col gap-3 h-full">
+    <li className="card p-4 flex flex-col gap-3 h-full group transform transition will-change-transform hover:scale-105 hover:shadow-lg focus-within:scale-105 focus-within:shadow-lg">
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-xl bg-black/5">
+        {/* Badge for tag */}
+        {product.tag && (
+          <span
+            className={clsx(
+              'absolute top-2 left-2 z-10 px-2 py-0.5 text-xs font-semibold rounded-md text-white',
+              product.tag === 'Promoção' ? 'bg-red-500' : 'bg-emerald-500',
+            )}
+          >
+            {product.tag}
+          </span>
+        )}
+
         <Image
           src={product.imageUrl ?? '/placeholder.png'}
           alt={product.name}
@@ -67,7 +80,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         />
       </div>
 
-      <div className="flex-1 min-h-20">
+      <div className="flex-1 min-h-20 flex flex-col items-center text-center">
         <h3 className="font-medium">{highlight(product.name, searchTerm.trim())}</h3>
         {product.description && (
           <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
@@ -76,8 +89,8 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm">
+      <div className="flex items-center justify-center flex-col gap-2">
+        <div className="text-sm text-center">
           <div className="font-semibold">{formatBRL(product.price)}</div>
           <div
             className={clsx(
@@ -92,10 +105,16 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
           </div>
         </div>
 
+        {/* Add button: visible only on hover or focus-within */}
         <button
           disabled={product.stock <= 0 || adding}
           onClick={handleAdd}
-          className="inline-flex items-center gap-2 rounded-md bg-brand text-white px-3 py-2 text-sm hover:opacity-95 disabled:opacity-60"
+          className={clsx(
+            'mt-2 inline-flex items-center gap-2 rounded-md bg-brand text-white px-3 py-2 text-sm transition-opacity duration-200',
+            'opacity-0 translate-y-1',
+            'group-hover:opacity-100 group-focus-within:opacity-100 group-hover:translate-y-0 group-focus-within:translate-y-0',
+            'disabled:opacity-60',
+          )}
           title={product.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
           aria-disabled={product.stock <= 0 || adding}
         >

@@ -24,6 +24,8 @@ const createProductSchema = z.object({
   price: z.coerce.number().finite('preço inválido'),
   stock: z.coerce.number().int().nonnegative().default(0),
   imageUrl: z.string().url('URL inválida').optional()
+  ,
+  tag: z.enum(['PROMOCAO', 'NOVO']).optional()
 })
 
 // Update sem defaults, só aplica o que vier
@@ -33,6 +35,8 @@ const updateProductSchema = z.object({
   price: z.coerce.number().finite().optional(),
   stock: z.coerce.number().int().nonnegative().optional(),
   imageUrl: z.string().url('URL inválida').nullable().optional()
+  ,
+  tag: z.enum(['PROMOCAO', 'NOVO']).nullable().optional()
 })
 
 /* ========= Handlers ========= */
@@ -103,6 +107,19 @@ export async function listProducts(req: Request, res: Response) {
         skip: (page - 1) * perPage,
         take: perPage,
         orderBy,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          price: true,
+          stock: true,
+          imageUrl: true,
+          tag: true,
+          categoryId: true,
+          createdAt: true,
+          updatedAt: true,
+        }
       }),
       prisma.product.count({ where }),
     ])
@@ -110,14 +127,33 @@ export async function listProducts(req: Request, res: Response) {
     total = cnt
   }
 
-  res.json({ page, perPage, total, items })
+  // map enum tag to localized string for frontend
+  const itemsMapped = items.map((it) => ({
+    ...it,
+    tag: it.tag === 'PROMOCAO' ? 'Promoção' : it.tag === 'NOVO' ? 'Novo' : undefined,
+  }))
+
+  res.json({ page, perPage, total, items: itemsMapped })
 }
 
 export async function getProduct(req: Request, res: Response) {
   const { id } = req.params
 
   const product = await prisma.product.findUnique({
-    where: { id: String(id) }
+    where: { id: String(id) },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      price: true,
+      stock: true,
+      imageUrl: true,
+      tag: true,
+      categoryId: true,
+      createdAt: true,
+      updatedAt: true,
+    }
   })
 
   if (!product) return res.status(404).json({ message: 'Produto não encontrado' })
@@ -140,10 +176,14 @@ export async function createProduct(req: Request, res: Response) {
         price: data.price,
         stock: data.stock ?? 0,
         description: data.description ?? null,
-        imageUrl: data.imageUrl ?? null
+        imageUrl: data.imageUrl ?? null,
+        tag: data.tag ?? null,
       }
     })
-    res.status(201).json(created)
+    res.status(201).json({
+      ...created,
+      tag: created.tag === 'PROMOCAO' ? 'Promoção' : created.tag === 'NOVO' ? 'Novo' : undefined,
+    })
   } catch (e: unknown) {
     if (isPrismaKnownError(e) && e.code === 'P2002') {
       return res.status(409).json({ message: 'Produto já existe (slug/nome duplicado)' })
@@ -172,6 +212,7 @@ export async function updateProduct(req: Request, res: Response) {
     description?: string | null
     imageUrl?: string | null
     slug?: string
+    tag?: 'PROMOCAO' | 'NOVO' | null
   } = {}
 
   if (patch.name !== undefined) {
@@ -183,13 +224,30 @@ export async function updateProduct(req: Request, res: Response) {
   if (patch.stock !== undefined) data.stock = patch.stock
   if (patch.description !== undefined) data.description = patch.description ?? null
   if (patch.imageUrl !== undefined) data.imageUrl = patch.imageUrl ?? null
+  if (patch.tag !== undefined) data.tag = patch.tag ?? null
 
   try {
     const updated = await prisma.product.update({
       where: { id: String(id) },
-      data
+      data,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        tag: true,
+        categoryId: true,
+        createdAt: true,
+        updatedAt: true,
+      }
     })
-    res.json(updated)
+    res.json({
+      ...updated,
+      tag: updated.tag === 'PROMOCAO' ? 'Promoção' : updated.tag === 'NOVO' ? 'Novo' : undefined,
+    })
   } catch (e: unknown) {
     if (isPrismaKnownError(e) && e.code === 'P2002') {
       return res.status(409).json({ message: 'Conflito de dados (slug/nome duplicado)' })
