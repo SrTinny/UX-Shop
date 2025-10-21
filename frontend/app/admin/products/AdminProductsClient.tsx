@@ -32,6 +32,7 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showOnlyOutOfStock, setShowOnlyOutOfStock] = useState(false);
 
   // Guard (auth + role)
   useEffect(() => {
@@ -59,6 +60,8 @@ export default function AdminProductsPage() {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
   }, [search]);
+
+  const filteredItems = showOnlyOutOfStock ? items.filter((p) => p.stock === 0) : items;
 
   const load = useCallback(async () => {
     try {
@@ -142,8 +145,8 @@ export default function AdminProductsPage() {
         </div>
       </header>
 
-      {/* Dashboard stats */}
-      <DashboardStats items={items} />
+  {/* Dashboard stats */}
+  <DashboardStats items={items} loading={loading} onFilterOutOfStock={() => setShowOnlyOutOfStock((s) => !s)} />
 
       {/* Toolbar de busca */}
       <section className="card p-4">
@@ -177,12 +180,17 @@ export default function AdminProductsPage() {
       </section>
 
       {/* Lista mobile (cards) */}
-      {!loading && items.length > 0 && (
-        <section className="grid gap-3 md:hidden">
-          {items.map((p) => (
-            <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
-          ))}
-        </section>
+      {!loading && filteredItems.length > 0 && (
+        <>
+          {showOnlyOutOfStock && (
+            <div className="text-sm text-slate-600 mb-2">Filtro: <strong>Somente sem estoque</strong></div>
+          )}
+          <section className="grid gap-3 md:hidden">
+            {filteredItems.map((p) => (
+              <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
+            ))}
+          </section>
+        </>
       )}
 
       {/* Lista desktop (tabela) */}
@@ -235,7 +243,7 @@ export default function AdminProductsPage() {
               )}
 
               {!loading &&
-                items.map((p) => (
+                filteredItems.map((p) => (
                   <ProductTableRow key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
                 ))}
             </tbody>

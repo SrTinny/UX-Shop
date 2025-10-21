@@ -15,16 +15,31 @@ type Product = {
 
 type Props = {
   items: Product[];
+  loading?: boolean;
+  onFilterOutOfStock?: () => void;
 };
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 
-export default function DashboardStats({ items }: Props) {
+export default function DashboardStats({ items, loading, onFilterOutOfStock }: Props) {
   const total = items.length;
   const outOfStock = items.filter((p) => p.stock === 0).length;
   const totalValue = items.reduce((acc, p) => acc + (p.price * (p.stock ?? 0)), 0);
   const maxPrice = items.length ? Math.max(...items.map((p) => p.price)) : 0;
+
+  if (loading) {
+    return (
+      <section aria-label="Estatísticas do catálogo" className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="card p-4 animate-pulse">
+            <div className="h-4 w-24 rounded bg-black/10 dark:bg-white/10" />
+            <div className="mt-3 h-8 w-20 rounded bg-black/10 dark:bg-white/10" />
+          </div>
+        ))}
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Estatísticas do catálogo" className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -33,10 +48,15 @@ export default function DashboardStats({ items }: Props) {
         <div className="mt-2 text-2xl font-semibold text-slate-900">{total}</div>
       </div>
 
-      <div className="card p-4">
+      <button
+        type="button"
+        onClick={onFilterOutOfStock}
+        className="card p-4 text-left cursor-pointer"
+        aria-pressed={false}
+      >
         <div className="text-sm text-slate-500">Itens sem estoque</div>
         <div className="mt-2 text-2xl font-semibold text-slate-900">{outOfStock}</div>
-      </div>
+      </button>
 
       <div className="card p-4">
         <div className="text-sm text-slate-500">Valor total em estoque</div>
