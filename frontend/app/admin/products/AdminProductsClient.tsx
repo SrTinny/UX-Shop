@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import ProductFormModal from './ProductFormModal';
 import ProductAdminCard from './ProductAdminCard';
 import ProductTableRow from './ProductTableRow';
+import DashboardStats from './DashboardStats';
 
 type Product = {
   id: string;
@@ -140,6 +141,9 @@ export default function AdminProductsPage() {
           </p>
         </div>
       </header>
+
+      {/* Dashboard stats */}
+      <DashboardStats items={items} />
 
       {/* Toolbar de busca */}
       <section className="card p-4">
