@@ -56,7 +56,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
   };
 
   return (
-    <li className="card p-4 flex flex-col gap-3">
+    <li className="card p-4 flex flex-col gap-3 h-full">
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-xl bg-black/5">
         <Image
           src={product.imageUrl ?? '/placeholder.png'}

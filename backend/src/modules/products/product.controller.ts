@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../../config/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, Product } from '@prisma/client'
 
 /* ========= helpers ========= */
 function slugify(s: string) {
@@ -43,21 +43,72 @@ export async function listProducts(req: Request, res: Response) {
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const perPage = Math.min(Number.isFinite(perPageRaw) && perPageRaw > 0 ? perPageRaw : 10, 50)
   const search = String(req.query.search ?? '').trim()
+  const sort = String(req.query.sort ?? 'relevance').trim()
+  const category = String(req.query.category ?? '').trim()
 
-  const where = search
-    ? { name: { contains: search, mode: 'insensitive' as const } }
-    : {}
+  // build `where` dynamically to support search and a simple category filter
+  const conditions: Prisma.ProductWhereInput[] = []
+  if (search) {
+    conditions.push({ name: { contains: search, mode: 'insensitive' as const } })
+  }
+  if (category) {
+    // no explicit category model — fallback to searching name/description
+    conditions.push({
+      OR: [
+        { name: { contains: category, mode: 'insensitive' as const } },
+        { description: { contains: category, mode: 'insensitive' as const } },
+      ],
+    })
+  }
 
-  const [items, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      skip: (page - 1) * perPage,
-      take: perPage,
-      orderBy: { createdAt: 'desc' }
-      // sem select => já devolve imageUrl/slug se existirem no schema
-    }),
-    prisma.product.count({ where })
-  ])
+  let where: Prisma.ProductWhereInput = {}
+  if (conditions.length === 1) where = conditions[0] ?? {}
+  else if (conditions.length > 1) where = { AND: conditions } as Prisma.ProductWhereInput
+
+  const orderBy: Prisma.ProductOrderByWithRelationInput = ((): Prisma.ProductOrderByWithRelationInput => {
+    switch (sort) {
+      case 'price_asc':
+        return { price: 'asc' }
+      case 'price_desc':
+        return { price: 'desc' }
+      case 'name_asc':
+        return { name: 'asc' }
+      case 'name_desc':
+        return { name: 'desc' }
+      default:
+        return { createdAt: 'desc' }
+    }
+  })()
+
+  // debug: parâmetros recebidos e orderBy — removido em produção
+
+  let items: Product[] = []
+  let total = 0
+
+  // If ordering by name we fetch all matching rows and sort in JS using localeCompare
+  // to avoid differences in DB collation. Then apply pagination slice.
+  if (sort === 'name_asc' || sort === 'name_desc') {
+    const all = await prisma.product.findMany({ where })
+    total = all.length
+    all.sort((a, b) => {
+      const cmp = String(a.name).localeCompare(String(b.name), 'pt-BR', { sensitivity: 'base' })
+      return sort === 'name_asc' ? cmp : -cmp
+    })
+    const start = (page - 1) * perPage
+    items = all.slice(start, start + perPage)
+  } else {
+    const [list, cnt] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip: (page - 1) * perPage,
+        take: perPage,
+        orderBy,
+      }),
+      prisma.product.count({ where }),
+    ])
+    items = list
+    total = cnt
+  }
 
   res.json({ page, perPage, total, items })
 }

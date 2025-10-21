@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 // Link removido (uso centralizado no HeaderBar)
 import axios from 'axios';
 import { api } from '@/lib/api';
@@ -88,10 +88,12 @@ export default function ProductsPage() {
         setLoading(true);
         setError(null);
 
-        const params: Record<string, unknown> = { page, perPage };
+  const params: Record<string, unknown> = { page, perPage };
         if (term) params.search = term;
         if (sortOpt) params.sort = sortOpt;
         if (categoryOpt) params.category = categoryOpt;
+
+  // params usados na chamada
 
         const res = await api.get<ProductsResponse>('/products', {
           params,
@@ -138,12 +140,24 @@ export default function ProductsPage() {
     [search, sort, category],
   );
 
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // when the URL query string changes, sync local state (search/sort/category)
+  // and trigger a fetch. We only depend on the raw query string to avoid
+  // loops when updating state here.
   useEffect(() => {
     const q = searchParams?.get('search') ?? '';
+    const s = searchParams?.get('sort') ?? 'relevance';
+    const c = searchParams?.get('category') ?? '';
+
     setSearch(q);
-    void fetchProducts({ term: q.trim(), page: 1, sort, category });
+    setSort(s);
+    setCategory(c);
+
+    void fetchProducts({ term: q.trim(), page: 1, sort: s, category: c });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams?.toString(), sort, category]);
+  }, [searchParams?.toString()]);
 
   const fetchCartQty = useCallback(async () => {
     try {
@@ -251,15 +265,30 @@ export default function ProductsPage() {
         <FilterBar
           sort={sort}
           category={category}
-          onSortChange={(v) => {
+          onSortChange={async (v) => {
+            setPage(1);
             setSort(v);
-            setPage(1);
-            void fetchProducts({ term: search.trim(), page: 1, sort: v, category });
+            // update the query string so the URL reflects state
+            const params = new URLSearchParams(searchParams?.toString() ?? '');
+            if (search.trim()) params.set('search', search.trim());
+            if (v) params.set('sort', v); else params.delete('sort');
+            if (category) params.set('category', category);
+            router.replace(`${pathname}?${params.toString()}`);
+
+            // fetch immediately so the list updates right away
+            await fetchProducts({ term: search.trim(), page: 1, sort: v, category });
           }}
-          onFilterChange={(v) => {
-            setCategory(v);
+          onFilterChange={async (v) => {
             setPage(1);
-            void fetchProducts({ term: search.trim(), page: 1, sort, category: v });
+            setCategory(v);
+            const params = new URLSearchParams(searchParams?.toString() ?? '');
+            if (search.trim()) params.set('search', search.trim());
+            if (sort) params.set('sort', sort);
+            if (v) params.set('category', v); else params.delete('category');
+            router.replace(`${pathname}?${params.toString()}`);
+
+            // fetch immediately on category change
+            await fetchProducts({ term: search.trim(), page: 1, sort, category: v });
           }}
         />
       </div>
@@ -298,7 +327,7 @@ export default function ProductsPage() {
       {/* Lista */}
       {!loading && hasResults && (
         <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
             {items.map((p) => (
               <ProductCard key={p.id} product={p} searchTerm={search} onAddToCart={addToCart} />
             ))}
