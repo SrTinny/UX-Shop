@@ -57,8 +57,8 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
   };
 
   return (
-    <li className="card p-4 flex flex-col gap-3 h-full group transform transition will-change-transform hover:scale-105 hover:shadow-lg focus-within:scale-105 focus-within:shadow-lg">
-      <div className="relative w-full aspect-[3/2] overflow-hidden rounded-xl bg-black/5">
+    <li className="card p-3 flex flex-col gap-2 h-full group transform transition-transform duration-150 hover:scale-102 hover:shadow-md focus-within:scale-102 focus-within:shadow-md">
+      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg bg-black/5">
         {/* Badge for tag */}
         {product.tag && (
           <span
@@ -80,18 +80,18 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         />
       </div>
 
-      <div className="flex-1 min-h-20 flex flex-col items-center text-center">
-        <h3 className="font-medium">{highlight(product.name, searchTerm.trim())}</h3>
+      <div className="flex-1 min-h-16 flex flex-col items-center text-center">
+        <h3 className="font-medium text-sm leading-snug">{highlight(product.name, searchTerm.trim())}</h3>
         {product.description && (
-          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
             {product.description}
           </p>
         )}
       </div>
 
-      <div className="flex items-center justify-center flex-col gap-2">
+      <div className="flex items-center justify-center flex-col gap-1">
         <div className="text-sm text-center">
-          <div className="font-semibold">{formatBRL(product.price)}</div>
+          <div className="font-semibold text-sm">{formatBRL(product.price)}</div>
           <div
             className={clsx(
               'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
@@ -110,7 +110,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
           disabled={product.stock <= 0 || adding}
           onClick={handleAdd}
           className={clsx(
-            'mt-2 inline-flex items-center gap-2 rounded-md bg-brand text-white px-3 py-2 text-sm transition-opacity duration-200',
+            'mt-1 inline-flex items-center gap-2 rounded-md bg-brand text-white px-2 py-1 text-xs transition-opacity duration-150',
             'opacity-0 translate-y-1',
             'group-hover:opacity-100 group-focus-within:opacity-100 group-hover:translate-y-0 group-focus-within:translate-y-0',
             'disabled:opacity-60',
@@ -118,7 +118,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
           title={product.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
           aria-disabled={product.stock <= 0 || adding}
         >
-          {adding ? 'Adicionando…' : <><PlusIcon className="h-4 w-4" />Adicionar</>}
+          {adding ? 'Adicionando…' : <PlusIcon className="h-4 w-4" />}
         </button>
       </div>
     </li>

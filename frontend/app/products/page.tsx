@@ -366,7 +366,7 @@ export default function ProductsPage() {
       {/* Lista */}
       {!loading && hasResults && (
         <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+          <ul className="grid gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 auto-rows-fr">
             {items.map((p) => (
               <ProductCard key={p.id} product={p} searchTerm={search} onAddToCart={addToCart} />
             ))}
