@@ -16,6 +16,7 @@ import useIntersectionObserver from '@/app/_components/useIntersectionObserver';
 /* ===================== Tipos ===================== */
 type Product = {
   id: string;
+  slug: string;
   name: string;
   description?: string | null;
   price: number;

@@ -100,16 +100,20 @@ export default function MobileNav({ open, setOpen, authed, admin, theme, toggleT
                 <Link href="/login" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Login</Link>
                 <Link href="/register" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Cadastro</Link>
               </>
-            ) : (
-              <button onClick={onLogout} className="w-full rounded-md bg-brand px-3 py-2 text-left text-sm font-medium text-white">Sair</button>
-            )}
+            ) : null}
           </div>
           {/* Footer links moved here for mobile */}
           <div className="mt-6 border-t pt-3" style={{ borderColor: 'var(--color-border)' }}>
-            <Link href="/about" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Sobre</Link>
             <Link href="/privacy" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Privacidade</Link>
             <Link href="/contact" className="block w-full rounded-md px-3 py-2 text-sm text-gray-700 hover:text-brand">Contato</Link>
           </div>
+
+          {/* Logout placed last in the menu when authenticated */}
+          {authed && (
+            <div className="mt-4">
+              <button onClick={onLogout} className="w-full rounded-md bg-brand px-3 py-2 text-left text-sm font-medium text-white">Sair</button>
+            </div>
+          )}
         </nav>
       </aside>
     </>
