@@ -206,7 +206,7 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
                     .map((c, idx) => (
                       <li
                         key={c.id}
-                        className={`px-3 py-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 ${activeIndex === idx ? 'bg-black/5' : ''}`}
+                        className={`px-3 py-2 cursor-pointer hover:bg-[var(--color-hover)] ${activeIndex === idx ? 'bg-[var(--color-hover)]' : ''}`}
                         onMouseDown={() => {
                           reset((vals) => ({ ...vals, categoryName: c.name }));
                           setSuggestionsVisible(false);

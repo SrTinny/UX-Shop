@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../../config/prisma'
-import { Prisma, Product } from '@prisma/client'
+import { Prisma, ProductTag } from '@prisma/client'
 
 /* ========= helpers ========= */
 function slugify(s: string) {
@@ -98,13 +98,44 @@ export async function listProducts(req: Request, res: Response) {
 
   // debug: parâmetros recebidos e orderBy — removido em produção
 
-  let items: Product[] = []
+  type SelectedProduct = {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    price: number
+    stock: number
+    imageUrl: string | null
+    tag: ProductTag | null
+    categoryId: string | null
+    category: { id: string; name: string } | null
+    createdAt: Date
+    updatedAt: Date
+  }
+
+  let items: SelectedProduct[] = []
   let total = 0
 
   // If ordering by name we fetch all matching rows and sort in JS using localeCompare
   // to avoid differences in DB collation. Then apply pagination slice.
   if (sort === 'name_asc' || sort === 'name_desc') {
-    const all = await prisma.product.findMany({ where })
+    const all = await prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        tag: true,
+        categoryId: true,
+        category: { select: { id: true, name: true } },
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
     total = all.length
     all.sort((a, b) => {
       const cmp = String(a.name).localeCompare(String(b.name), 'pt-BR', { sensitivity: 'base' })
@@ -141,8 +172,9 @@ export async function listProducts(req: Request, res: Response) {
   }
 
   // map enum tag to localized string for frontend
-  const itemsMapped = items.map((it) => ({
+  const itemsMapped = items.map((it: SelectedProduct) => ({
     ...it,
+    categoryName: it.category?.name ?? null,
     tag: it.tag === 'PROMOCAO' ? 'Promoção' : it.tag === 'NOVO' ? 'Novo' : undefined,
   }))
 
@@ -171,7 +203,11 @@ export async function getProduct(req: Request, res: Response) {
   })
 
   if (!product) return res.status(404).json({ message: 'Produto não encontrado' })
-  res.json(product)
+  res.json({
+    ...product,
+    categoryName: product.category?.name ?? null,
+    tag: product.tag === 'PROMOCAO' ? 'Promoção' : product.tag === 'NOVO' ? 'Novo' : undefined,
+  })
 }
 
 export async function createProduct(req: Request, res: Response) {
@@ -214,9 +250,23 @@ export async function createProduct(req: Request, res: Response) {
     }
     if (categoryId) createData.categoryId = categoryId
 
-    const created = await prisma.product.create({ data: createData })
+    const created = await prisma.product.create({ data: createData, select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      price: true,
+      stock: true,
+      imageUrl: true,
+      tag: true,
+      categoryId: true,
+      category: { select: { id: true, name: true } },
+      createdAt: true,
+      updatedAt: true,
+    } })
     res.status(201).json({
       ...created,
+      categoryName: created.category?.name ?? null,
       tag: created.tag === 'PROMOCAO' ? 'Promoção' : created.tag === 'NOVO' ? 'Novo' : undefined,
     })
   } catch (e: unknown) {
@@ -313,6 +363,7 @@ export async function updateProduct(req: Request, res: Response) {
     })
     res.json({
       ...updated,
+      categoryName: updated.category?.name ?? null,
       tag: updated.tag === 'PROMOCAO' ? 'Promoção' : updated.tag === 'NOVO' ? 'Novo' : undefined,
     })
   } catch (e: unknown) {
