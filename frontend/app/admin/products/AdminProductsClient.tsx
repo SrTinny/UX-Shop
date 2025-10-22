@@ -241,28 +241,7 @@ export default function AdminProductsPage() {
               <button onClick={load} className="btn btn-primary whitespace-nowrap">
                 {loading ? "Buscando…" : "Buscar"}
               </button>
-              <button
-                onClick={() => setCompactMode((s) => !s)}
-                title="Alternar densidade"
-                aria-pressed={compactMode}
-                aria-label="Alternar densidade da lista"
-                className="btn border border-black/10 dark:border-white/10 p-2 flex items-center justify-center md:hidden"
-              >
-                {/* icon: two stacked rectangles for comfortable, dense small tiles for compact */}
-                {compactMode ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor" />
-                    <rect x="15" y="3" width="6" height="6" rx="1" fill="currentColor" />
-                    <rect x="3" y="15" width="6" height="6" rx="1" fill="currentColor" />
-                    <rect x="15" y="15" width="6" height="6" rx="1" fill="currentColor" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor" />
-                    <rect x="3" y="14" width="18" height="6" rx="1" fill="currentColor" />
-                  </svg>
-                )}
-              </button>
+              {/* compact toggle intentionally removed from responsive UI per request */}
               <select
                 value={perPage}
                 onChange={(e) => setPerPage(Number(e.target.value))}

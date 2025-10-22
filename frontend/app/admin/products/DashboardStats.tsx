@@ -43,31 +43,64 @@ export default function DashboardStats({ items, loading, onFilterOutOfStock, act
   }
 
   return (
-  <section aria-label="Estatísticas do catálogo" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="card p-4">
-        <div className="text-sm text-slate-500">Total de produtos</div>
-        <div className="mt-2 text-2xl font-semibold text-slate-900">{total}</div>
-      </div>
+    <>
+      {/* Mobile layout: valor total em estoque por cima, os outros três em uma linha abaixo */}
+      <section aria-label="Estatísticas do catálogo" className="md:hidden space-y-4">
+        <div className="card p-4">
+          <div className="text-sm text-slate-500">Valor total em estoque</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{formatBRL(totalValue)}</div>
+        </div>
 
-      <button
-        type="button"
-        onClick={onFilterOutOfStock}
-        className={`card p-4 text-left cursor-pointer ${outOfStock > 0 ? 'hover:shadow-md' : ''} ${activeFilter ? 'ring-2 ring-brand/60 border-brand' : ''}`}
-        aria-pressed={!!activeFilter}
-      >
-        <div className="text-sm text-slate-500">Itens sem estoque</div>
-        <div className="mt-2 text-2xl font-semibold text-slate-900">{outOfStock}</div>
-      </button>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="card p-3 text-center">
+            <div className="text-sm text-slate-500">Total de produtos</div>
+            <div className="mt-2 text-lg font-semibold text-slate-900">{total}</div>
+          </div>
 
-      <div className="card p-4">
-        <div className="text-sm text-slate-500">Valor total em estoque</div>
-        <div className="mt-2 text-2xl font-semibold text-slate-900">{formatBRL(totalValue)}</div>
-      </div>
+          <button
+            type="button"
+            onClick={onFilterOutOfStock}
+            className={`card p-3 text-center cursor-pointer ${outOfStock > 0 ? 'hover:shadow-md' : ''} ${activeFilter ? 'ring-2 ring-brand/60 border-brand' : ''}`}
+            aria-pressed={!!activeFilter}
+          >
+            <div className="text-sm text-slate-500">Itens sem estoque</div>
+            <div className="mt-2 text-lg font-semibold text-slate-900">{outOfStock}</div>
+          </button>
 
-      <div className="card p-4">
-        <div className="text-sm text-slate-500">Produto mais caro</div>
-        <div className="mt-2 text-2xl font-semibold text-slate-900">{items.length ? formatBRL(maxPrice) : "—"}</div>
-      </div>
-    </section>
+          <div className="card p-3 text-center">
+            <div className="text-sm text-slate-500">Produto mais caro</div>
+            <div className="mt-2 text-lg font-semibold text-slate-900">{items.length ? formatBRL(maxPrice) : '—'}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Desktop layout: mantém o grid existente para >= md */}
+      <section aria-label="Estatísticas do catálogo" className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4">
+          <div className="text-sm text-slate-500">Total de produtos</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{total}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onFilterOutOfStock}
+          className={`card p-4 text-left cursor-pointer ${outOfStock > 0 ? 'hover:shadow-md' : ''} ${activeFilter ? 'ring-2 ring-brand/60 border-brand' : ''}`}
+          aria-pressed={!!activeFilter}
+        >
+          <div className="text-sm text-slate-500">Itens sem estoque</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{outOfStock}</div>
+        </button>
+
+        <div className="card p-4">
+          <div className="text-sm text-slate-500">Valor total em estoque</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{formatBRL(totalValue)}</div>
+        </div>
+
+        <div className="card p-4">
+          <div className="text-sm text-slate-500">Produto mais caro</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{items.length ? formatBRL(maxPrice) : "—"}</div>
+        </div>
+      </section>
+    </>
   );
 }
