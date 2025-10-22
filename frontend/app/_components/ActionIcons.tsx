@@ -11,9 +11,10 @@ type Props = {
   onLogout: () => void;
   cartCount: number;
   badgePulse?: boolean;
+  hideLogout?: boolean;
 };
 
-export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cartCount, badgePulse }: Props) {
+export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cartCount, badgePulse, hideLogout }: Props) {
   const badge = cartCount > 9 ? '+9' : String(cartCount);
 
   return (
@@ -25,6 +26,23 @@ export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cart
         {cartCount > 0 && (
           <span aria-live="polite" className={clsx("absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium", badgePulse ? 'scale-110 shadow-md' : '')}>{badge}</span>
         )}
+      </Link>
+
+      {/* Notifications */}
+      <button aria-label="Notificações" title="Notificações" className="relative p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 17h5l-1.405-1.405C18.403 14.403 18 13.744 18 13V9a6 6 0 10-12 0v4c0 .744-.403 1.403-1.595 2.595L3 17h5" />
+          <path d="M13.73 21a2 2 0 01-3.46 0" />
+        </svg>
+        <span className="sr-only">Notificações</span>
+      </button>
+
+      {/* Chat */}
+      <Link href="/chat" aria-label="Chats" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span className="sr-only">Chats</span>
       </Link>
 
       {/* Admin icon removed - admin link remains in navigation menus */}
@@ -64,14 +82,17 @@ export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cart
             </svg>
             <span className="sr-only">Conta</span>
           </Link>
-          <button onClick={onLogout} title="Sair" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
-            <span className="sr-only">Sair</span>
-          </button>
+          {/* Logout button can be hidden by parent (so parent can render it last in desktop) */}
+          {!hideLogout && (
+            <button onClick={onLogout} title="Sair" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
+              <span className="sr-only">Sair</span>
+            </button>
+          )}
         </>
       )}
     </div>

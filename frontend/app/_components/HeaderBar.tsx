@@ -182,14 +182,16 @@ export default function HeaderBar() {
         {/* Desktop navigation (centralized) */}
         <div className="flex items-center gap-2">
           <DesktopNav
-          authed={authed}
-          admin={admin}
-          theme={theme}
-          toggleTheme={toggleTheme}
-          onLogout={onLogout}
-          cartCount={cartCount}
-          badgePulse={false}
-        />
+            authed={authed}
+            admin={admin}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            onLogout={onLogout}
+            cartCount={cartCount}
+            badgePulse={false}
+          />
+
+          {/* Chat and notifications moved into ActionIcons to keep action icons together */}
         </div>
         {/* Mobile right group: search input (left) + cart icon + hamburger on the right */}
         <div className="md:hidden flex items-center gap-3 w-full">

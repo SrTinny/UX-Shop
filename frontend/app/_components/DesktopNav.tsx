@@ -66,7 +66,18 @@ export default function DesktopNav({ authed, admin, theme, toggleTheme, onLogout
 
       {authed && admin && <NavLink href="/admin/products" label="Admin" />}
 
-  <ActionIcons authed={authed} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} cartCount={cartCount} badgePulse={badgePulse} />
+  <ActionIcons authed={authed} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} cartCount={cartCount} badgePulse={badgePulse} hideLogout={true} />
+    {/* Render logout as the last item in the desktop header when authenticated so it appears last */}
+    {authed && (
+      <button onClick={onLogout} title="Sair" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
+        </svg>
+        <span className="sr-only">Sair</span>
+      </button>
+    )}
     </nav>
   );
 }
