@@ -99,7 +99,7 @@ export default function ProductTableRow({ product, onEdit, onRemove, removingId,
     </tr>
 
     {/* details row for md (progressive disclosure). Hidden on large screens where description column is visible */}
-    <tr className={`${expanded ? '' : 'hidden'} lg:hidden bg-white/50 dark:bg-slate-900/50`}>
+    <tr className={`${expanded ? '' : 'hidden'} lg:hidden theme-card-bg`}>
       <td colSpan={7} className="p-3 border-t text-sm text-slate-700 dark:text-slate-300">
         <div className="flex flex-col gap-2">
           <div className="text-sm text-slate-600">{product.description ?? "—"}</div>

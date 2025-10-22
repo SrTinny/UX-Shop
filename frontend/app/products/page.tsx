@@ -64,6 +64,14 @@ export default function ProductsPage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // página de produtos agora pública — não redirecionamos para /login aqui
+  const [compactMode, setCompactMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('ui:density');
+      if (v === 'compact') setCompactMode(true);
+    } catch {}
+  }, []);
 
   // sincroniza `search` com o query param (quando o header navega para /products?search=...)
   const searchParams = useSearchParams();
@@ -287,45 +295,59 @@ export default function ProductsPage() {
         onContinueGuest={handleContinueGuest}
       />
       {/* Header: título e contador */}
-      <header className="flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-col">
           <h1 className="text-2xl font-semibold text-brand">Produtos</h1>
-          <div className="text-sm text-slate-600">Exibindo {items.length} de {total} produtos</div>
+          <div className="text-sm text-slate-600 mt-1">Exibindo <span className="font-medium">{items.length}</span> de <span className="font-medium">{total}</span> produtos</div>
+        </div>
+
+        <div className="w-full md:w-auto mt-3 md:mt-0">
+          <FilterBar
+            sort={sort}
+            category={category}
+            onSortChange={async (v) => {
+              setPage(1);
+              setSort(v);
+              // update the query string so the URL reflects state
+              const params = new URLSearchParams(searchParams?.toString() ?? '');
+              if (search.trim()) params.set('search', search.trim());
+              if (v) params.set('sort', v); else params.delete('sort');
+              if (category) params.set('category', category);
+              router.replace(`${pathname}?${params.toString()}`);
+
+              // fetch immediately so the list updates right away
+              await fetchProducts({ term: search.trim(), page: 1, sort: v, category });
+            }}
+            onFilterChange={async (v) => {
+              setPage(1);
+              setCategory(v);
+              const params = new URLSearchParams(searchParams?.toString() ?? '');
+              if (search.trim()) params.set('search', search.trim());
+              if (sort) params.set('sort', sort);
+              if (v) params.set('category', v); else params.delete('category');
+              router.replace(`${pathname}?${params.toString()}`);
+
+              // fetch immediately on category change
+              await fetchProducts({ term: search.trim(), page: 1, sort, category: v });
+            }}
+          />
+          {/* Mobile-only compact toggle (does not interfere on desktop) */}
+          <div className="mt-2 md:hidden">
+            <button
+              className="btn border border-black/10 dark:border-white/10 p-2"
+              onClick={() => {
+                const next = !compactMode;
+                try { localStorage.setItem('ui:density', next ? 'compact' : 'comfortable'); } catch {}
+                setCompactMode(next);
+              }}
+              aria-pressed={compactMode}
+              aria-label="Alternar densidade (mobile)"
+            >
+              {compactMode ? 'Confortável' : 'Compacto'}
+            </button>
+          </div>
         </div>
       </header>
-
-      {/* Filter bar em linha separada (full width) */}
-      <div className="w-full mb-4">
-        <FilterBar
-          sort={sort}
-          category={category}
-          onSortChange={async (v) => {
-            setPage(1);
-            setSort(v);
-            // update the query string so the URL reflects state
-            const params = new URLSearchParams(searchParams?.toString() ?? '');
-            if (search.trim()) params.set('search', search.trim());
-            if (v) params.set('sort', v); else params.delete('sort');
-            if (category) params.set('category', category);
-            router.replace(`${pathname}?${params.toString()}`);
-
-            // fetch immediately so the list updates right away
-            await fetchProducts({ term: search.trim(), page: 1, sort: v, category });
-          }}
-          onFilterChange={async (v) => {
-            setPage(1);
-            setCategory(v);
-            const params = new URLSearchParams(searchParams?.toString() ?? '');
-            if (search.trim()) params.set('search', search.trim());
-            if (sort) params.set('sort', sort);
-            if (v) params.set('category', v); else params.delete('category');
-            router.replace(`${pathname}?${params.toString()}`);
-
-            // fetch immediately on category change
-            await fetchProducts({ term: search.trim(), page: 1, sort, category: v });
-          }}
-        />
-      </div>
 
       {/* Mensagem de erro */}
       {error && (
@@ -336,7 +358,7 @@ export default function ProductsPage() {
 
       {/* Skeleton */}
       {loading && (
-        <ul className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" aria-busy="true">
+        <ul className={"grid gap-3 auto-rows-fr " + (compactMode ? 'grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')} aria-busy="true">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i} className="card p-4 animate-pulse">
               <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 rounded mb-3" />
@@ -366,7 +388,7 @@ export default function ProductsPage() {
       {/* Lista */}
       {!loading && hasResults && (
         <>
-          <ul className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-fr">
+          <ul className={"grid gap-3 auto-rows-fr " + (compactMode ? 'grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')}>
             {items.map((p) => (
               <ProductCard key={p.id} product={p} searchTerm={search} onAddToCart={addToCart} />
             ))}

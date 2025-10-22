@@ -38,6 +38,21 @@ export default function AdminProductsPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showOnlyOutOfStock, setShowOnlyOutOfStock] = useState(false);
+  const [compactMode, setCompactMode] = useState(false);
+
+  // Persistir preferência de densidade no localStorage
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('ui:density');
+      if (v === 'compact') setCompactMode(true);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ui:density', compactMode ? 'compact' : 'comfortable');
+    } catch {}
+  }, [compactMode]);
 
   // Guard (auth + role)
   useEffect(() => {
@@ -224,6 +239,28 @@ export default function AdminProductsPage() {
               <button onClick={load} className="btn btn-primary whitespace-nowrap">
                 {loading ? "Buscando…" : "Buscar"}
               </button>
+              <button
+                onClick={() => setCompactMode((s) => !s)}
+                title="Alternar densidade"
+                aria-pressed={compactMode}
+                aria-label="Alternar densidade da lista"
+                className="btn border border-black/10 dark:border-white/10 p-2 flex items-center justify-center md:hidden"
+              >
+                {/* icon: two stacked rectangles for comfortable, dense small tiles for compact */}
+                {compactMode ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="15" y="3" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="3" y="15" width="6" height="6" rx="1" fill="currentColor" />
+                    <rect x="15" y="15" width="6" height="6" rx="1" fill="currentColor" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor" />
+                    <rect x="3" y="14" width="18" height="6" rx="1" fill="currentColor" />
+                  </svg>
+                )}
+              </button>
               <select
                 value={perPage}
                 onChange={(e) => setPerPage(Number(e.target.value))}
@@ -253,9 +290,10 @@ export default function AdminProductsPage() {
           {showOnlyOutOfStock && (
             <div className="text-sm text-slate-600 mb-2">Filtro: <strong>Somente sem estoque</strong></div>
           )}
-          <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:hidden">
+          {/* Mobile card grid: compactMode => 3 cols, comfortable => 2 cols (responsive) */}
+          <section className={"grid gap-3 md:hidden items-stretch auto-rows-fr " + (compactMode ? 'grid-cols-3 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-2')}>
             {filteredItems.map((p) => (
-              <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
+              <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} compact={compactMode} />
             ))}
           </section>
         </>
@@ -266,7 +304,7 @@ export default function AdminProductsPage() {
         <div className="max-h-[520px] overflow-auto">
           <div className="min-w-full">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+            <thead className="sticky top-0 backdrop-blur theme-card-bg">
               <tr className="[&>th]:p-3 [&>th]:text-left [&>th]:font-semibold text-slate-700 dark:text-slate-200">
                 <th>Imagem</th>
                 <th>Nome</th>
@@ -325,9 +363,11 @@ export default function AdminProductsPage() {
       <ProductFormModal open={modalOpen} onClose={() => setModalOpen(false)} editingProduct={editing} onSaveSuccess={handleSaveSuccess} />
 
       {/* Pagination controls */}
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="text-sm text-slate-600">Total: {totalItems} itens</div>
-  <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={(n) => setPage(n)} loading={loading} />
+        <div>
+          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={(n) => setPage(n)} loading={loading} />
+        </div>
       </div>
     </main>
   );

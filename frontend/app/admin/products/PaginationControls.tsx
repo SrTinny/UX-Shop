@@ -27,15 +27,18 @@ export default function PaginationControls({ currentPage, totalPages, onPageChan
 
   return (
     <div className="w-full flex items-center justify-between gap-2 py-3">
-      {/* small screens: compact selector + prev/next */}
+      {/* small screens: compact selector + prev/next (visible only on sm:hidden) */}
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <button
-          className="btn border px-3 py-2"
+          className="btn border px-3 py-2 sm:hidden"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={loading || currentPage <= 1}
+          aria-label="Anterior"
+          title="Anterior"
         >
-          ‹
-          <span className="sr-only">Anterior</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M12.293 16.293a1 1 0 010 1.414l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L8.414 10l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
         </button>
 
         <div className="flex items-center gap-2 sm:hidden">
@@ -55,35 +58,67 @@ export default function PaginationControls({ currentPage, totalPages, onPageChan
         </div>
 
         <button
-          className="btn border px-3 py-2"
+          className="btn border px-3 py-2 sm:hidden"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={loading || currentPage >= totalPages}
+          aria-label="Próxima"
+          title="Próxima"
         >
-          ›
-          <span className="sr-only">Próxima</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M7.707 3.707a1 1 0 010-1.414l6 6a1 1 0 010 1.414l-6 6a1 1 0 11-1.414-1.414L11.586 10 6.293 4.707a1 1 0 011.414-1.414z" clipRule="evenodd" />
+          </svg>
         </button>
       </div>
 
-      {/* medium+ screens: full pager */}
+      {/* medium+ screens: full pager with arrows flanking the page numbers */}
       <div className="hidden sm:flex sm:items-center sm:gap-2 overflow-x-auto">
-        <div className="flex flex-wrap items-center gap-1">
-          {pages.map((p) => {
-            const base = 'px-3 py-1 rounded border text-sm transition-colors';
-            const activeCls = 'bg-brand text-white shadow';
-            const inactiveCls = 'bg-white text-slate-700 border-black/10 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-white/10 dark:hover:bg-slate-700';
-            return (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                disabled={loading || p === currentPage}
-                aria-current={p === currentPage}
-                className={`${base} ${p === currentPage ? activeCls : inactiveCls} min-w-[36px] text-center`}
-              >
-                {p}
-              </button>
-            );
-          })}
+        <button
+          className="btn border px-3 py-2 mr-2"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={loading || currentPage <= 1}
+          aria-label="Anterior"
+          title="Anterior"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M12.293 16.293a1 1 0 010 1.414l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L8.414 10l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        <div className="flex-1">
+          <div className="flex justify-center">
+            <div className="flex flex-wrap items-center gap-1 justify-center">
+              {pages.map((p) => {
+                const base = 'px-3 py-1 rounded border text-sm transition-colors';
+                const activeCls = 'bg-brand text-white shadow';
+                const inactiveCls = 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)] hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-white/10 dark:hover:bg-slate-700';
+                return (
+                  <button
+                    key={p}
+                    onClick={() => onPageChange(p)}
+                    disabled={loading || p === currentPage}
+                    aria-current={p === currentPage}
+                    className={`${base} ${p === currentPage ? activeCls : inactiveCls} min-w-[36px] text-center`}
+                    style={p === currentPage ? undefined : { background: 'var(--color-card)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        <button
+          className="btn border px-3 py-2 ml-2"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={loading || currentPage >= totalPages}
+          aria-label="Próxima"
+          title="Próxima"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M7.707 3.707a1 1 0 010-1.414l6 6a1 1 0 010 1.414l-6 6a1 1 0 11-1.414-1.414L11.586 10 6.293 4.707a1 1 0 011.414-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
       </div>
     </div>
   );
