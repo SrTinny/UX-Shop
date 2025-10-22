@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from 'next-themes';
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           defaultTheme="light"  // tema inicial
           enableSystem={false}  // ignore tema do sistema (opcional)
         >
-          {/* Header global */}
-          <HeaderBar />
+          {/* Header global (wrapped in Suspense to allow client navigation hooks to hydrate) */}
+            <Suspense fallback={null}>
+              <HeaderBar />
+            </Suspense>
 
           {/* Toaster global */}
           <Toaster richColors position="top-right" />
