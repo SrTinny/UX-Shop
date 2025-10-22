@@ -29,6 +29,8 @@ table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block
   --color-header: #ffffff;
   --color-border: color-mix(in oklab, var(--color-card), black 10%);
   --color-muted:  color-mix(in oklab, var(--color-text), white 40%);
+  /* hover/interactive tokens */
+  --color-hover: color-mix(in oklab, var(--color-card), black 6%);
 }
 
 /* ===== Dark ===== */
@@ -39,6 +41,8 @@ table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block
   --color-header: #0b0f1a;
   --color-border: color-mix(in oklab, var(--color-card), white 12%);
   --color-muted:  color-mix(in oklab, var(--color-text), black 35%);
+  /* hover/interactive tokens for dark */
+  --color-hover: color-mix(in oklab, var(--color-card), white 4%);
 }
 
 /* ===== Base ===== */

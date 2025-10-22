@@ -34,13 +34,14 @@ export default function MobileNav({ open, setOpen, authed, admin, theme, toggleT
         role="dialog"
         aria-modal="true"
         className={clsx(
-          "fixed top-0 left-0 h-full w-72 max-w-full bg-white dark:bg-[#071022] shadow-xl transform transition-transform duration-300 z-50",
+          "fixed top-0 left-0 h-full w-72 max-w-full shadow-xl transform transition-transform duration-300 z-50",
           open ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ background: 'var(--color-card)' }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b dark:border-white/10" style={{ borderColor: 'var(--color-border)' }}>
           <div className="text-lg font-semibold text-brand">Menu</div>
-          <button aria-label="Fechar menu" onClick={() => setOpen(false)} className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+          <button aria-label="Fechar menu" onClick={() => setOpen(false)} className="p-2 rounded-md hover:bg-[var(--color-hover)]">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />

@@ -40,6 +40,7 @@ export default function ProductsClient() {
 
   const [sort, setSort] = useState<string>('relevance');
   const [category, setCategory] = useState<string>('');
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
   const [cartQty, setCartQty] = useState<number>(0);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -160,6 +161,44 @@ export default function ProductsClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams?.toString()]);
 
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const res = await api.get('/categories');
+        if (!mounted) return;
+        setCategoriesList(res.data ?? []);
+      } catch {}
+    })();
+
+    const onCategoriesChanged = (e: Event) => {
+      // if event includes detail with the new category name, apply it to search params
+      try {
+        const detail = (e as CustomEvent).detail as string | undefined;
+        if (detail) {
+          const sp = new URLSearchParams(Array.from(searchParams.entries()));
+          sp.set('category', detail);
+          const url = `/products?${sp.toString()}`;
+          router.push(url);
+        } else {
+          // refresh categories list
+          void (async () => {
+            try {
+              const res = await api.get('/categories');
+              if (!mounted) return;
+              setCategoriesList(res.data ?? []);
+            } catch {}
+          })();
+        }
+      } catch {}
+    };
+
+    window.addEventListener('categories:changed', onCategoriesChanged as EventListener);
+    return () => { mounted = false; window.removeEventListener('categories:changed', onCategoriesChanged as EventListener); };
+  }, [router, searchParams]);
+
+  
+
   const fetchCartQty = useCallback(async () => {
     try {
       if (!isAuthenticated()) {
@@ -279,6 +318,7 @@ export default function ProductsClient() {
           <FilterBar
             sort={sort}
             category={category}
+            categories={categoriesList}
             onSortChange={async (v) => {
               setPage(1);
               setSort(v);

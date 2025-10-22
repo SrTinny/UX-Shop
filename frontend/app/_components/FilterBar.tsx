@@ -7,9 +7,10 @@ type Props = {
   category: string;
   onSortChange: (value: string) => void;
   onFilterChange: (value: string) => void;
+  categories?: { id: string; name: string }[];
 };
 
-export default function FilterBar({ sort, category, onSortChange, onFilterChange }: Props) {
+export default function FilterBar({ sort, category, onSortChange, onFilterChange, categories }: Props) {
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end">
@@ -40,9 +41,15 @@ export default function FilterBar({ sort, category, onSortChange, onFilterChange
                 style={{ borderColor: 'var(--color-border)' }}
               >
                 <option value="">Todas</option>
-                <option value="eletronicos">Eletrônicos</option>
-                <option value="roupas">Roupas</option>
-                <option value="livros">Livros</option>
+                {categories && categories.length > 0 ? (
+                  categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)
+                ) : (
+                  <>
+                    <option value="eletronicos">Eletrônicos</option>
+                    <option value="roupas">Roupas</option>
+                    <option value="livros">Livros</option>
+                  </>
+                )}
               </select>
             </div>
           </div>

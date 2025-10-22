@@ -41,6 +41,9 @@ type Props = {
 
 export default function ProductFormModal({ open, onClose, onSaveSuccess, editingProduct }: Props) {
   const [saving, setSaving] = useState(false);
+  const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([]);
+  const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
@@ -64,7 +67,35 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
     }
   }, [editingProduct, reset]);
 
-  // no categories fetch needed for free-text category input
+  // fetch categories for autocomplete
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const res = await api.get('/categories');
+        if (!mounted) return;
+        setAllCategories(res.data ?? []);
+      } catch {}
+    })();
+
+    const onCategoriesChanged = (e: Event) => {
+      void (async () => {
+        try {
+          const res = await api.get('/categories');
+          if (!mounted) return;
+          setAllCategories(res.data ?? []);
+          // if event provides a detail with new category name, prefill it
+          try {
+            const detail = (e as CustomEvent).detail as string | undefined;
+            if (detail) reset((vals) => ({ ...vals, categoryName: detail }));
+          } catch {}
+        } catch {}
+      })();
+    }
+    window.addEventListener('categories:changed', onCategoriesChanged as EventListener);
+
+    return () => { mounted = false; window.removeEventListener('categories:changed', onCategoriesChanged as EventListener); };
+  }, [reset]);
 
   async function onSubmit(data: ProductFormData) {
     try {
@@ -77,6 +108,7 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
         await api.post("/products", data);
         toast.success("Produto criado");
       }
+      try { window.dispatchEvent(new CustomEvent('categories:changed', { detail: data.categoryName ?? undefined })); } catch {}
       onSaveSuccess();
     } catch (e: unknown) {
       let msg = editingProduct ? "Erro ao atualizar" : "Erro ao criar";
@@ -141,7 +173,50 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
 
             <div>
               <label className="mb-1 block text-sm" htmlFor="categoryName">Categoria</label>
-              <input id="categoryName" className="input-base" {...register('categoryName')} placeholder="ex: roupas, eletronicos" />
+              <input
+                id="categoryName"
+                className="input-base"
+                {...register('categoryName')}
+                placeholder="ex: roupas, eletronicos"
+                onFocus={() => setSuggestionsVisible(true)}
+                onBlur={() => setTimeout(() => setSuggestionsVisible(false), 150)}
+                onKeyDown={(e) => {
+                  const filtered = allCategories.filter((c) => (c.name || '').toLowerCase().includes(String((document.getElementById('categoryName') as HTMLInputElement)?.value ?? '').toLowerCase()));
+                  if (e.key === 'ArrowDown') {
+                    setActiveIndex((i) => (i === null ? 0 : Math.min(filtered.length - 1, i + 1)));
+                    e.preventDefault();
+                  } else if (e.key === 'ArrowUp') {
+                    setActiveIndex((i) => (i === null ? Math.max(0, filtered.length - 1) : Math.max(0, i - 1)));
+                    e.preventDefault();
+                  } else if (e.key === 'Enter') {
+                    if (activeIndex !== null && filtered[activeIndex]) {
+                      const name = filtered[activeIndex].name;
+                      reset((vals) => ({ ...vals, categoryName: name }));
+                      setSuggestionsVisible(false);
+                      e.preventDefault();
+                    }
+                  }
+                }}
+              />
+              {suggestionsVisible && allCategories.length > 0 && (
+                <ul className="mt-1 max-h-40 overflow-auto rounded border z-50 shadow absolute bg-[var(--color-card)] text-[var(--color-text)]" style={{ minWidth: 240, borderColor: 'var(--color-border)' }}>
+                  {allCategories
+                    .filter((c) => (c.name || '').toLowerCase().includes(String((document.getElementById('categoryName') as HTMLInputElement)?.value ?? '').toLowerCase()))
+                    .slice(0, 8)
+                    .map((c, idx) => (
+                      <li
+                        key={c.id}
+                        className={`px-3 py-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 ${activeIndex === idx ? 'bg-black/5' : ''}`}
+                        onMouseDown={() => {
+                          reset((vals) => ({ ...vals, categoryName: c.name }));
+                          setSuggestionsVisible(false);
+                        }}
+                      >
+                        {c.name}
+                      </li>
+                    ))}
+                </ul>
+              )}
             </div>
 
             <div className="sm:col-span-2 flex flex-wrap items-center gap-2">

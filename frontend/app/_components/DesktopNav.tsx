@@ -46,11 +46,12 @@ export default function DesktopNav({ authed, admin, theme, toggleTheme, onLogout
               {item.label}
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg>
             </button>
-            <div className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-[#071022] border border-gray-200 dark:border-white/10 shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity">
+            <div className="absolute left-0 mt-2 w-48 rounded-md border shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity"
+              style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
               <ul className="py-2">
                 {item.children.map((sub) => (
                   <li key={sub.label}>
-                    <Link href={sub.href} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200">{sub.label}</Link>
+                    <Link href={sub.href} className="block px-4 py-2 text-sm" style={{ color: 'var(--color-text)' }}>{sub.label}</Link>
                   </li>
                 ))}
               </ul>

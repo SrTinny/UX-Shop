@@ -157,8 +157,7 @@ export default function HeaderBar() {
             <input
               id="header-search-input"
               data-header-search="true"
-              className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm dark:bg-[#071022] dark:border-white/10 dark:text-gray-200"
-              style={theme === 'light' ? { backgroundColor: '#ffffff', color: '#0f172a' } : undefined}
+              className="w-full pl-9 pr-3 py-2 rounded-md border text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]"
               placeholder="Buscar produtos..."
               value={query}
               onChange={(e) => {
@@ -200,14 +199,14 @@ export default function HeaderBar() {
         {/* Mobile right group: cart icon + search toggle/input + hamburger */}
         <div className="md:hidden flex items-center gap-2">
           {/* cart icon (small) */}
-          {authed ? (
-            <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+            {authed ? (
+            <Link href="/cart" className="relative inline-flex items-center p-2 rounded-md hover:bg-[var(--color-hover)]">
               <CartIcon className="h-6 w-6 text-current" />
               <span className="sr-only">Carrinho</span>
               <span aria-live="polite" className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[11px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{cartBadge}</span>
             </Link>
-          ) : (
-            <button className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5" aria-label="Carrinho">
+            ) : (
+            <button className="p-2 rounded-md hover:bg-[var(--color-hover)]" aria-label="Carrinho">
               <CartIcon className="h-5 w-5 text-current" />
             </button>
           )}
@@ -220,7 +219,7 @@ export default function HeaderBar() {
                   setMobileSearchOpen(true);
                   setTimeout(() => mobileSearchRef.current?.focus(), 50);
                 }}
-                className="p-2 rounded-md bg-black/5 dark:bg-white/5"
+                className="p-2 rounded-md bg-[var(--color-hover)]"
                 aria-label="Buscar"
               >
                 <svg className="h-4 w-4 text-gray-700 dark:text-gray-200" viewBox="0 0 20 20" fill="currentColor">

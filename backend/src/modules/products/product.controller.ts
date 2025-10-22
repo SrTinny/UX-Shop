@@ -60,13 +60,21 @@ export async function listProducts(req: Request, res: Response) {
     conditions.push({ name: { contains: search, mode: 'insensitive' as const } })
   }
   if (category) {
-    // no explicit category model — fallback to searching name/description
-    conditions.push({
-      OR: [
-        { name: { contains: category, mode: 'insensitive' as const } },
-        { description: { contains: category, mode: 'insensitive' as const } },
-      ],
-    })
+    // try to match an existing Category by slug or name; if found, filter by categoryId
+    const catParam = String(category).trim()
+    const catSlug = slugify(catParam)
+    const foundCat = await prisma.category.findFirst({ where: { OR: [{ slug: catSlug }, { name: { equals: catParam, mode: 'insensitive' as const } }] } })
+    if (foundCat) {
+      conditions.push({ categoryId: foundCat.id })
+    } else {
+      // fallback: search in name/description
+      conditions.push({
+        OR: [
+          { name: { contains: category, mode: 'insensitive' as const } },
+          { description: { contains: category, mode: 'insensitive' as const } },
+        ],
+      })
+    }
   }
 
   let where: Prisma.ProductWhereInput = {}

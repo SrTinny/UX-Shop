@@ -323,22 +323,22 @@ export default function AdminProductsPage() {
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="p-3">
-                      <div className="h-10 w-10 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-10 w-10 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                     <td className="p-3">
-                      <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-4 w-40 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                     <td className="p-3">
-                      <div className="h-4 w-20 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-4 w-20 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                     <td className="p-3">
-                      <div className="h-4 w-20 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-4 w-20 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                     <td className="hidden p-3 lg:table-cell">
-                      <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-4 w-40 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                     <td className="p-3">
-                      <div className="ml-auto h-8 w-28 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="ml-auto h-8 w-28 rounded" style={{ background: 'var(--color-border)' }} />
                     </td>
                   </tr>
                 ))}

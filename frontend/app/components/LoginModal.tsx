@@ -14,7 +14,7 @@ export default function LoginModal({ open, onClose, onLogin, onContinueGuest }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md">
+  <div className="rounded-lg p-6 w-full max-w-md" style={{ background: 'var(--color-card)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
         <h3 className="text-lg font-semibold mb-2">Atenção</h3>
         <p className="text-sm mb-4">Você precisa fazer login para salvar o carrinho no servidor. Deseja fazer login agora?</p>
 
