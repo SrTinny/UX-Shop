@@ -43,7 +43,7 @@ export default function DashboardStats({ items, loading, onFilterOutOfStock, act
   }
 
   return (
-    <section aria-label="Estatísticas do catálogo" className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+  <section aria-label="Estatísticas do catálogo" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="card p-4">
         <div className="text-sm text-slate-500">Total de produtos</div>
         <div className="mt-2 text-2xl font-semibold text-slate-900">{total}</div>

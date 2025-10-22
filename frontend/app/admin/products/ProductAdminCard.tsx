@@ -39,33 +39,35 @@ export default function ProductAdminCard({ product, onEdit, onRemove, removingId
 
   return (
     <article key={product.id} className="card p-4 space-y-2" aria-label={`Produto ${product.name}`}>
-      <div className="relative h-40 w-full overflow-hidden rounded bg-black/5">
-        <Image src={src} alt={product.name} fill style={{ objectFit: 'cover' }} />
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded bg-black/5">
+        <Image src={src} alt={product.name} fill style={{ objectFit: 'cover' }} sizes="(max-width: 640px) 100vw, 400px" />
       </div>
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
         <h3 className="font-semibold leading-tight">{product.name}</h3>
         <span className="text-sm text-slate-600 dark:text-slate-300">{formatDate(product.updatedAt ?? product.createdAt)}</span>
       </div>
 
       <div className="text-sm text-slate-700 dark:text-slate-300">{product.description ?? "—"}</div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-brand font-semibold">{formatBRL(product.price)}</span>
-        <span className="text-sm text-slate-600 dark:text-slate-300">Estoque: {product.stock}</span>
-      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-brand font-semibold">{formatBRL(product.price)}</span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">Estoque: {product.stock}</span>
+        </div>
 
-      <div className="flex flex-wrap justify-end gap-2 pt-2">
-        <button className="btn border border-black/10 dark:border-white/10" onClick={() => onEdit(product)}>
-          Editar
-        </button>
-        <button
-          className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
-          disabled={removingId === product.id}
-          onClick={() => onRemove(product.id)}
-        >
-          {removingId === product.id ? "Removendo…" : "Remover"}
-        </button>
+        <div className="mt-2 sm:mt-0 sm:ml-auto flex gap-2">
+          <button className="btn border border-black/10 dark:border-white/10 w-28" onClick={() => onEdit(product)}>
+            Editar
+          </button>
+          <button
+            className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 w-28"
+            disabled={removingId === product.id}
+            onClick={() => onRemove(product.id)}
+          >
+            {removingId === product.id ? "Removendo…" : "Remover"}
+          </button>
+        </div>
       </div>
     </article>
   );

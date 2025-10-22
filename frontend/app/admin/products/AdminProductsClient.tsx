@@ -31,6 +31,7 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [perPage, setPerPage] = useState(50);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function AdminProductsPage() {
       setLoading(true);
       setErrorMsg(null);
       const res = await api.get("/products", {
-        params: { page, perPage: 50, search: debouncedSearch || undefined },
+        params: { page, perPage, search: debouncedSearch || undefined },
       });
       setItems((res.data?.items ?? []) as Product[]);
       setTotalPages((res.data?.totalPages ?? res.data?.total ?? 1) as number);
@@ -89,7 +90,7 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page]);
+  }, [debouncedSearch, page, perPage]);
 
   useEffect(() => {
     if (ready) void load();
@@ -99,6 +100,11 @@ export default function AdminProductsPage() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
+
+  // reset page when perPage changes
+  useEffect(() => {
+    setPage(1);
+  }, [perPage]);
 
   
 
@@ -173,16 +179,26 @@ export default function AdminProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Buscar produtos por nome"
           />
-          <div className="flex gap-2">
-            <button onClick={load} className="btn btn-primary whitespace-nowrap">
-              {loading ? "Buscando…" : "Buscar"}
-            </button>
-            <button
-              onClick={startCreate}
-              className="btn border border-black/10 dark:border-white/10 whitespace-nowrap"
-            >
-              Novo produto
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+              <button onClick={load} className="btn btn-primary whitespace-nowrap">
+                {loading ? "Buscando…" : "Buscar"}
+              </button>
+              <select
+                value={perPage}
+                onChange={(e) => setPerPage(Number(e.target.value))}
+                className="input-base w-full sm:w-auto"
+                aria-label="Itens por página"
+              >
+                <option value={10}>10 / página</option>
+                <option value={25}>25 / página</option>
+                <option value={50}>50 / página</option>
+              </select>
+              <button
+                onClick={startCreate}
+                className="btn border border-black/10 dark:border-white/10 whitespace-nowrap w-full sm:w-auto"
+              >
+                Novo produto
+              </button>
           </div>
         </div>
         <div className="mt-2 min-h-5 text-sm text-red-600" role="status" aria-live="polite">
@@ -207,6 +223,7 @@ export default function AdminProductsPage() {
       {/* Lista desktop (tabela) */}
       <section className="card overflow-hidden hidden md:block">
         <div className="max-h-[520px] overflow-auto">
+          <div className="min-w-full">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
               <tr className="[&>th]:p-3 [&>th]:text-left [&>th]:font-semibold text-slate-700 dark:text-slate-200">
@@ -259,6 +276,7 @@ export default function AdminProductsPage() {
                 ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 
@@ -268,7 +286,7 @@ export default function AdminProductsPage() {
       {/* Pagination controls */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-slate-600">Total: {totalItems} itens</div>
-        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={(n) => setPage(n)} />
+  <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={(n) => setPage(n)} loading={loading} />
       </div>
     </main>
   );
