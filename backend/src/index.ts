@@ -1,6 +1,7 @@
 import express from 'express'
 import cors, { CorsOptions } from 'cors'
 import productRoutes from './modules/products/product.routes'
+import categoryRoutes from './modules/categories/category.routes'
 import authRoutes from './modules/auth/auth.routes'
 import cartRoutes from './modules/cart/cart.routes'
 import { errorHandler } from './middlewares/errorHandler'
@@ -47,6 +48,7 @@ app.use('/auth', authRoutes)
 
 /* Rotas protegidas / públicas */
 app.use('/products', productRoutes)
+app.use('/categories', categoryRoutes)
 app.use('/cart', cartRoutes)
 
 app.get('/', (_req, res) => res.send('🚀 Servidor rodando com TypeScript!'))

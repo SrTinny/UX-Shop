@@ -25,7 +25,9 @@ const createProductSchema = z.object({
   stock: z.coerce.number().int().nonnegative().default(0),
   imageUrl: z.string().url('URL inválida').optional()
   ,
-  tag: z.enum(['PROMOCAO', 'NOVO']).optional()
+  tag: z.enum(['PROMOCAO', 'NOVO']).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  categoryName: z.string().optional().nullable(),
 })
 
 // Update sem defaults, só aplica o que vier
@@ -36,7 +38,9 @@ const updateProductSchema = z.object({
   stock: z.coerce.number().int().nonnegative().optional(),
   imageUrl: z.string().url('URL inválida').nullable().optional()
   ,
-  tag: z.enum(['PROMOCAO', 'NOVO']).nullable().optional()
+  tag: z.enum(['PROMOCAO', 'NOVO']).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  categoryName: z.string().nullable().optional(),
 })
 
 /* ========= Handlers ========= */
@@ -117,6 +121,7 @@ export async function listProducts(req: Request, res: Response) {
           imageUrl: true,
           tag: true,
           categoryId: true,
+          category: { select: { id: true, name: true } },
           createdAt: true,
           updatedAt: true,
         }
@@ -151,6 +156,7 @@ export async function getProduct(req: Request, res: Response) {
       imageUrl: true,
       tag: true,
       categoryId: true,
+      category: { select: { id: true, name: true } },
       createdAt: true,
       updatedAt: true,
     }
@@ -169,17 +175,38 @@ export async function createProduct(req: Request, res: Response) {
   const data = parsed.data
 
   try {
-    const created = await prisma.product.create({
-      data: {
-        name: data.name,
-        slug: slugify(data.name), // se tiver coluna slug
-        price: data.price,
-        stock: data.stock ?? 0,
-        description: data.description ?? null,
-        imageUrl: data.imageUrl ?? null,
-        tag: data.tag ?? null,
+    // handle free-text categoryName: find or create Category and set categoryId
+    let categoryId: string | undefined
+    const cnameRaw = data.categoryName
+    if (cnameRaw) {
+      const cname = String(cnameRaw).trim()
+      if (cname) {
+        const cslug = slugify(cname)
+        let cat = await prisma.category.findUnique({ where: { slug: cslug } })
+        if (!cat) {
+          cat = await prisma.category.findFirst({ where: { name: { equals: cname, mode: 'insensitive' } } })
+        }
+        if (!cat) {
+          cat = await prisma.category.create({ data: { name: cname, slug: cslug } })
+        }
+        categoryId = cat.id
       }
-    })
+    }
+
+    // build create payload and include categoryId only when defined
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createData: any = {
+      name: data.name,
+      slug: slugify(data.name),
+      price: data.price,
+      stock: data.stock ?? 0,
+      description: data.description ?? null,
+      imageUrl: data.imageUrl ?? null,
+      tag: data.tag ?? null,
+    }
+    if (categoryId) createData.categoryId = categoryId
+
+    const created = await prisma.product.create({ data: createData })
     res.status(201).json({
       ...created,
       tag: created.tag === 'PROMOCAO' ? 'Promoção' : created.tag === 'NOVO' ? 'Novo' : undefined,
@@ -225,11 +252,42 @@ export async function updateProduct(req: Request, res: Response) {
   if (patch.description !== undefined) data.description = patch.description ?? null
   if (patch.imageUrl !== undefined) data.imageUrl = patch.imageUrl ?? null
   if (patch.tag !== undefined) data.tag = patch.tag ?? null
+  // handle categoryName in update: find/create category and set categoryId
+  let updateCategoryId: string | undefined
+  if (patch.categoryName !== undefined) {
+    const cnameRaw = patch.categoryName
+    if (cnameRaw) {
+      const cname = String(cnameRaw).trim()
+      if (cname) {
+        const cslug = slugify(cname)
+        let cat = await prisma.category.findUnique({ where: { slug: cslug } })
+        if (!cat) {
+          cat = await prisma.category.findFirst({ where: { name: { equals: cname, mode: 'insensitive' } } })
+        }
+        if (!cat) {
+          cat = await prisma.category.create({ data: { name: cname, slug: cslug } })
+        }
+        updateCategoryId = cat.id
+      } else {
+        updateCategoryId = null as unknown as string
+      }
+    } else {
+      updateCategoryId = null as unknown as string
+    }
+  }
 
   try {
+    // build final update payload
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = { ...data }
+    if (patch.categoryName !== undefined) {
+      // set explicit categoryId (could be string or null)
+      updateData.categoryId = updateCategoryId ?? null
+    }
+
     const updated = await prisma.product.update({
       where: { id: String(id) },
-      data,
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -240,6 +298,7 @@ export async function updateProduct(req: Request, res: Response) {
         imageUrl: true,
         tag: true,
         categoryId: true,
+        category: { select: { id: true, name: true } },
         createdAt: true,
         updatedAt: true,
       }

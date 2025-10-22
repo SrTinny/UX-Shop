@@ -17,6 +17,8 @@ type Product = {
   createdAt?: string;
   updatedAt?: string;
   imageUrl?: string | null;
+  tag?: string | null;
+  category?: { id: string; name: string } | null;
 };
 
 const productSchema = z.object({
@@ -25,6 +27,8 @@ const productSchema = z.object({
   price: z.coerce.number().nonnegative("Preço inválido"),
   stock: z.coerce.number().int("Estoque deve ser inteiro").nonnegative("Estoque inválido"),
   imageUrl: z.string().url("URL inválida").optional(),
+  tag: z.enum(["PROMOCAO", "NOVO"]).optional(),
+  categoryName: z.string().optional().nullable(),
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -37,6 +41,7 @@ type Props = {
 
 export default function ProductFormModal({ open, onClose, onSaveSuccess, editingProduct }: Props) {
   const [saving, setSaving] = useState(false);
+  
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormData>,
@@ -51,16 +56,21 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
         price: editingProduct.price,
         stock: editingProduct.stock,
         imageUrl: editingProduct.imageUrl ?? "",
+  tag: editingProduct.tag === 'Promoção' ? 'PROMOCAO' : editingProduct.tag === 'Novo' ? 'NOVO' : undefined,
+  categoryName: editingProduct.category?.name ?? null,
       });
     } else {
-      reset({ name: "", description: "", price: 0, stock: 0, imageUrl: "" });
+      reset({ name: "", description: "", price: 0, stock: 0, imageUrl: "", categoryName: "" });
     }
   }, [editingProduct, reset]);
+
+  // no categories fetch needed for free-text category input
 
   async function onSubmit(data: ProductFormData) {
     try {
       setSaving(true);
       if (editingProduct) {
+        // send categoryName field expected by the backend
         await api.put(`/products/${editingProduct.id}`, data);
         toast.success("Produto atualizado");
       } else {
@@ -118,6 +128,20 @@ export default function ProductFormModal({ open, onClose, onSaveSuccess, editing
               <label className="mb-1 block text-sm" htmlFor="imageUrl">Link da imagem</label>
               <input id="imageUrl" className="input-base" type="url" placeholder="https://exemplo.com/imagem.jpg" {...register("imageUrl")} />
               {errors.imageUrl && <p className="mt-1 text-xs text-red-600">{errors.imageUrl.message}</p>}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm" htmlFor="tag">Tag</label>
+              <select id="tag" className="input-base" {...register('tag')}>
+                <option value="">Nenhuma</option>
+                <option value="PROMOCAO">Promoção</option>
+                <option value="NOVO">Novo</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm" htmlFor="categoryName">Categoria</label>
+              <input id="categoryName" className="input-base" {...register('categoryName')} placeholder="ex: roupas, eletronicos" />
             </div>
 
             <div className="sm:col-span-2 flex flex-wrap items-center gap-2">

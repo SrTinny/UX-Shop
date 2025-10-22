@@ -13,6 +13,7 @@ type Product = {
   createdAt?: string;
   updatedAt?: string;
   imageUrl?: string | null;
+  category?: { id: string; name: string } | null;
 };
 
 type Props = {
@@ -55,7 +56,10 @@ export default function ProductAdminCard({ product, onEdit, onRemove, removingId
 
       <Link href={`/products/${product.id}`} className="no-underline text-inherit flex flex-col flex-grow min-h-0">
         <div className={"flex flex-col " + (compact ? 'gap-1' : 'sm:flex-row sm:items-start sm:justify-between gap-2') + " min-h-0"}>
-          <h3 className={"font-semibold leading-tight " + (compact ? 'text-sm line-clamp-2' : '')} title={product.name}>{product.name}</h3>
+          <div className="flex flex-col">
+            <h3 className={"font-semibold leading-tight " + (compact ? 'text-sm line-clamp-2' : '')} title={product.name}>{product.name}</h3>
+            {product.category?.name && <span className="text-xs text-slate-500 dark:text-slate-400">{product.category.name}</span>}
+          </div>
           <span className={"text-sm text-slate-600 dark:text-slate-300 " + (compact ? 'text-xs' : '')}>{formatDate(product.updatedAt ?? product.createdAt)}</span>
         </div>
 

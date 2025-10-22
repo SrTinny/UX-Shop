@@ -12,6 +12,7 @@ type Product = {
   stock: number;
   imageUrl?: string | null;
   tag?: 'Promoção' | 'Novo';
+  category?: { id: string; name: string } | null;
 };
 
 const formatBRL = (v: number) =>
@@ -86,6 +87,9 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
             {product.description}
           </p>
+        )}
+        {product.category?.name && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{product.category.name}</div>
         )}
       </div>
 
