@@ -146,7 +146,7 @@ export default function AdminProductsPage() {
       </header>
 
   {/* Dashboard stats */}
-  <DashboardStats items={items} loading={loading} onFilterOutOfStock={() => setShowOnlyOutOfStock((s) => !s)} />
+  <DashboardStats items={items} loading={loading} onFilterOutOfStock={() => setShowOnlyOutOfStock((s) => !s)} activeFilter={showOnlyOutOfStock} />
 
       {/* Toolbar de busca */}
       <section className="card p-4">

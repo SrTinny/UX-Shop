@@ -17,12 +17,13 @@ type Props = {
   items: Product[];
   loading?: boolean;
   onFilterOutOfStock?: () => void;
+  activeFilter?: boolean;
 };
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 
-export default function DashboardStats({ items, loading, onFilterOutOfStock }: Props) {
+export default function DashboardStats({ items, loading, onFilterOutOfStock, activeFilter }: Props) {
   const total = items.length;
   const outOfStock = items.filter((p) => p.stock === 0).length;
   const totalValue = items.reduce((acc, p) => acc + (p.price * (p.stock ?? 0)), 0);
@@ -51,8 +52,8 @@ export default function DashboardStats({ items, loading, onFilterOutOfStock }: P
       <button
         type="button"
         onClick={onFilterOutOfStock}
-        className="card p-4 text-left cursor-pointer"
-        aria-pressed={false}
+        className={`card p-4 text-left cursor-pointer ${outOfStock > 0 ? 'hover:shadow-md' : ''} ${activeFilter ? 'ring-2 ring-brand/60 border-brand' : ''}`}
+        aria-pressed={!!activeFilter}
       >
         <div className="text-sm text-slate-500">Itens sem estoque</div>
         <div className="mt-2 text-2xl font-semibold text-slate-900">{outOfStock}</div>
