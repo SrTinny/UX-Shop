@@ -53,6 +53,15 @@ export default function ProductsClient() {
       const v = localStorage.getItem('ui:density');
       if (v === 'compact') setCompactMode(true);
     } catch {}
+  
+    const onDensity = (e: Event) => {
+      try {
+        const detail = (e as CustomEvent).detail as string;
+        setCompactMode(detail === 'compact');
+      } catch {}
+    };
+    window.addEventListener('ui:density:changed', onDensity as EventListener);
+    return () => window.removeEventListener('ui:density:changed', onDensity as EventListener);
   }, []);
 
   const searchParams = useSearchParams();
@@ -266,7 +275,7 @@ export default function ProductsClient() {
           <div className="text-sm text-slate-600 mt-1">Exibindo <span className="font-medium">{items.length}</span> de <span className="font-medium">{total}</span> produtos</div>
         </div>
 
-        <div className="w-full md:w-auto mt-3 md:mt-0">
+        <div className="w-full md:w-auto mt-3 md:mt-0 flex justify-start">
           <FilterBar
             sort={sort}
             category={category}
@@ -291,20 +300,7 @@ export default function ProductsClient() {
               await fetchProducts({ term: search.trim(), page: 1, sort, category: v });
             }}
           />
-          <div className="mt-2 md:hidden">
-            <button
-              className="btn border border-black/10 dark:border-white/10 p-2"
-              onClick={() => {
-                const next = !compactMode;
-                try { localStorage.setItem('ui:density', next ? 'compact' : 'comfortable'); } catch {}
-                setCompactMode(next);
-              }}
-              aria-pressed={compactMode}
-              aria-label="Alternar densidade (mobile)"
-            >
-              {compactMode ? 'Confortável' : 'Compacto'}
-            </button>
-          </div>
+          {/* compact toggle moved to HeaderBar */}
         </div>
       </header>
 

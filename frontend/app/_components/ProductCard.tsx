@@ -80,7 +80,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         />
       </div>
 
-      <div className="flex-1 min-h-10 md:min-h-12 flex flex-col items-center text-center">
+      <div className="flex-1 min-h-10 md:min-h-12 flex flex-col items-start sm:items-center text-left sm:text-center">
         <h3 className="font-medium text-sm md:text-sm lg:text-sm xl:text-base leading-snug">{highlight(product.name, searchTerm.trim())}</h3>
         {product.description && (
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
@@ -89,7 +89,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         )}
       </div>
 
-      <div className="flex items-center justify-center flex-col gap-1">
+      <div className="flex items-center justify-center flex-col gap-1 w-full">
         <div className="text-sm text-center">
           <div className="font-semibold text-sm md:text-sm lg:text-sm xl:text-base">{formatBRL(product.price)}</div>
           <div

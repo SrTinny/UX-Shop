@@ -46,13 +46,15 @@ export default function AdminProductsPage() {
       const v = localStorage.getItem('ui:density');
       if (v === 'compact') setCompactMode(true);
     } catch {}
+    const onDensity = (e: Event) => {
+      try {
+        const detail = (e as CustomEvent).detail as string;
+        setCompactMode(detail === 'compact');
+      } catch {}
+    };
+    window.addEventListener('ui:density:changed', onDensity as EventListener);
+    return () => window.removeEventListener('ui:density:changed', onDensity as EventListener);
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('ui:density', compactMode ? 'compact' : 'comfortable');
-    } catch {}
-  }, [compactMode]);
 
   // Guard (auth + role)
   useEffect(() => {

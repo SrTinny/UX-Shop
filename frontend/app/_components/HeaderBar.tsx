@@ -18,6 +18,7 @@ export default function HeaderBar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  
   const mobileSearchRef = useRef<HTMLInputElement | null>(null);
   const path = usePathname();
   const [cartCount, setCartCount] = useState<number>(0);
@@ -59,6 +60,8 @@ export default function HeaderBar() {
       setTheme(prefersDark ? "dark" : "light");
       document.documentElement.classList.toggle("dark", prefersDark);
     }
+
+    
   }, []);
 
   // busca quantidade do carrinho quando o header monta
@@ -116,6 +119,8 @@ export default function HeaderBar() {
     document.documentElement.classList.toggle("dark", next === "dark");
     localStorage.setItem("theme", next);
   };
+
+  
 
   // keep ready guard as before
   if (!ready) return null;
@@ -181,7 +186,8 @@ export default function HeaderBar() {
         </div>
 
         {/* Desktop navigation (centralized) */}
-        <DesktopNav
+        <div className="flex items-center gap-2">
+          <DesktopNav
           authed={authed}
           admin={admin}
           theme={theme}
@@ -190,6 +196,7 @@ export default function HeaderBar() {
           cartCount={cartCount}
           badgePulse={false}
         />
+        </div>
         {/* Mobile right group: cart icon + search toggle/input + hamburger */}
         <div className="md:hidden flex items-center gap-2">
           {/* cart icon (small) */}
