@@ -9,6 +9,7 @@ import ProductFormModal from './ProductFormModal';
 import ProductAdminCard from './ProductAdminCard';
 import ProductTableRow from './ProductTableRow';
 import DashboardStats from './DashboardStats';
+import PaginationControls from './PaginationControls';
 
 type Product = {
   id: string;
@@ -27,6 +28,9 @@ export default function AdminProductsPage() {
   const [ready, setReady] = useState(false);
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -68,9 +72,11 @@ export default function AdminProductsPage() {
       setLoading(true);
       setErrorMsg(null);
       const res = await api.get("/products", {
-        params: { page: 1, perPage: 50, search: debouncedSearch || undefined },
+        params: { page, perPage: 50, search: debouncedSearch || undefined },
       });
       setItems((res.data?.items ?? []) as Product[]);
+      setTotalPages((res.data?.totalPages ?? res.data?.total ?? 1) as number);
+      setTotalItems((res.data?.totalItems ?? res.data?.total ?? 0) as number);
     } catch (e: unknown) {
       let msg = "Erro ao carregar produtos";
       if (axios.isAxiosError(e)) {
@@ -83,11 +89,16 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, page]);
 
   useEffect(() => {
     if (ready) void load();
   }, [ready, load]);
+
+  // reset page to 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   
 
@@ -253,6 +264,12 @@ export default function AdminProductsPage() {
 
       {/* Product form moved to modal */}
       <ProductFormModal open={modalOpen} onClose={() => setModalOpen(false)} editingProduct={editing} onSaveSuccess={handleSaveSuccess} />
+
+      {/* Pagination controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-slate-600">Total: {totalItems} itens</div>
+        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={(n) => setPage(n)} />
+      </div>
     </main>
   );
 }
