@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
+import InlineEditCell from './InlineEditCell';
 
 type Product = {
   id: string;
@@ -19,10 +20,9 @@ type Props = {
   onEdit: (p: Product) => void;
   onRemove: (id: string) => void;
   removingId?: string | null;
+  onSavePrice?: (id: string, newPrice: number) => Promise<void>;
+  onSaveStock?: (id: string, newStock: number) => Promise<void>;
 };
-
-const formatBRL = (n: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 
 const formatDate = (iso?: string) => {
   if (!iso) return "—";
@@ -34,7 +34,7 @@ const formatDate = (iso?: string) => {
 const PLACEHOLDER =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="100%" height="100%" fill="%23e5e7eb"/></svg>';
 
-export default function ProductTableRow({ product, onEdit, onRemove, removingId }: Props) {
+export default function ProductTableRow({ product, onEdit, onRemove, removingId, onSavePrice, onSaveStock }: Props) {
   const src = product.imageUrl || PLACEHOLDER;
 
   return (
@@ -43,8 +43,25 @@ export default function ProductTableRow({ product, onEdit, onRemove, removingId 
         <Image src={src} alt={product.name} width={40} height={40} className="rounded" />
       </td>
       <td className="p-3 font-medium">{product.name}</td>
-      <td className="p-3">{formatBRL(product.price)}</td>
-      <td className="p-3">{product.stock}</td>
+      <td className="p-3">
+        <InlineEditCell
+          value={product.price}
+          inputType="number"
+          displayFormatter={(v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v))}
+          onSave={async (newVal) => {
+            if (onSavePrice) await onSavePrice(product.id, Number(newVal));
+          }}
+        />
+      </td>
+      <td className="p-3">
+        <InlineEditCell
+          value={product.stock}
+          inputType="number"
+          onSave={async (newVal) => {
+            if (onSaveStock) await onSaveStock(product.id, Number(newVal));
+          }}
+        />
+      </td>
       <td className="hidden p-3 text-slate-600 dark:text-slate-300 lg:table-cell">
         {formatDate(product.updatedAt ?? product.createdAt)}
       </td>

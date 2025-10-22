@@ -146,6 +146,47 @@ export default function AdminProductsPage() {
     }
   }
 
+  // Handlers para InlineEditCell
+  async function handleSavePrice(id: string, newPrice: number) {
+    try {
+      console.debug("handleSavePrice start", { id, newPrice });
+      const res = await api.patch(`/products/${id}`, { price: newPrice });
+      console.debug("handleSavePrice response", res?.data);
+      toast.success('Preço atualizado');
+      await load();
+      console.debug("handleSavePrice load finished");
+    } catch (e: unknown) {
+      console.error("handleSavePrice error", e);
+      let msg = 'Erro ao atualizar preço';
+      if (axios.isAxiosError(e)) {
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
+      toast.error(msg);
+    }
+  }
+
+  async function handleSaveStock(id: string, newStock: number) {
+    try {
+      console.debug("handleSaveStock start", { id, newStock });
+      const res = await api.patch(`/products/${id}`, { stock: newStock });
+      console.debug("handleSaveStock response", res?.data);
+      toast.success('Estoque atualizado');
+      await load();
+      console.debug("handleSaveStock load finished");
+    } catch (e: unknown) {
+      console.error("handleSaveStock error", e);
+      let msg = 'Erro ao atualizar estoque';
+      if (axios.isAxiosError(e)) {
+        msg = (e.response?.data as { message?: string } | undefined)?.message ?? e.message ?? msg;
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
+      toast.error(msg);
+    }
+  }
+
   // logout gerenciado pelo HeaderBar global
 
   if (!ready) return null;
@@ -272,7 +313,7 @@ export default function AdminProductsPage() {
 
               {!loading &&
                 filteredItems.map((p) => (
-                  <ProductTableRow key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
+                  <ProductTableRow key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} onSavePrice={handleSavePrice} onSaveStock={handleSaveStock} />
                 ))}
             </tbody>
           </table>
