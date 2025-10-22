@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import InlineEditCell from './InlineEditCell';
 
 type Product = {
@@ -35,12 +35,18 @@ const PLACEHOLDER =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="100%" height="100%" fill="%23e5e7eb"/></svg>';
 
 export default function ProductTableRow({ product, onEdit, onRemove, removingId, onSavePrice, onSaveStock }: Props) {
+  const [expanded, setExpanded] = useState(false);
   const src = product.imageUrl || PLACEHOLDER;
 
   return (
-    <tr className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+    <>
+      <tr
+        className="transition-colors hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+        onClick={() => setExpanded((s) => !s)}
+        aria-expanded={expanded}
+      >
       <td className="p-3">
-        <Image src={src} alt={product.name} width={40} height={40} className="rounded" />
+        <Image src={src} alt={product.name} width={56} height={56} className="rounded" />
       </td>
       <td className="p-3 font-medium">{product.name}</td>
       <td className="p-3">
@@ -65,25 +71,42 @@ export default function ProductTableRow({ product, onEdit, onRemove, removingId,
       <td className="hidden p-3 text-slate-600 dark:text-slate-300 lg:table-cell">
         {formatDate(product.updatedAt ?? product.createdAt)}
       </td>
-      <td className="p-3 text-slate-600 dark:text-slate-300">{product.description ?? "—"}</td>
+      <td className="hidden p-3 text-slate-600 dark:text-slate-300 lg:table-cell">{product.description ?? "—"}</td>
       <td className="p-3">
         <div className="flex justify-end gap-2">
           <button
-            className="inline-flex items-center gap-2 px-2 py-1 border border-black/10 rounded"
-            onClick={() => onEdit(product)}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-black/10 rounded-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(product);
+            }}
           >
             Editar
             <span className="sr-only">Editar {product.name}</span>
           </button>
           <button
-            className="inline-flex items-center gap-2 px-2 py-1 border border-red-600 text-red-600 rounded hover:bg-red-600 hover:text-white disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 border border-red-600 text-red-600 rounded-md hover:bg-red-600 hover:text-white disabled:opacity-50"
             disabled={removingId === product.id}
-            onClick={() => onRemove(product.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(product.id);
+            }}
           >
             {removingId === product.id ? "Removendo…" : "Remover"}
           </button>
         </div>
       </td>
     </tr>
+
+    {/* details row for md (progressive disclosure). Hidden on large screens where description column is visible */}
+    <tr className={`${expanded ? '' : 'hidden'} lg:hidden bg-white/50 dark:bg-slate-900/50`}>
+      <td colSpan={7} className="p-3 border-t text-sm text-slate-700 dark:text-slate-300">
+        <div className="flex flex-col gap-2">
+          <div className="text-sm text-slate-600">{product.description ?? "—"}</div>
+          <div className="text-xs text-slate-500">Atualizado: {formatDate(product.updatedAt ?? product.createdAt)}</div>
+        </div>
+      </td>
+    </tr>
+    </>
   );
 }

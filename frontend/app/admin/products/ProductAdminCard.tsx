@@ -39,7 +39,7 @@ export default function ProductAdminCard({ product, onEdit, onRemove, removingId
 
   return (
     <article key={product.id} className="card p-4 space-y-2" aria-label={`Produto ${product.name}`}>
-      <div className="relative aspect-[16/9] w-full overflow-hidden rounded bg-black/5">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded bg-black/5">
         <Image src={src} alt={product.name} fill style={{ objectFit: 'cover' }} sizes="(max-width: 640px) 100vw, 400px" />
       </div>
 
@@ -57,11 +57,14 @@ export default function ProductAdminCard({ product, onEdit, onRemove, removingId
         </div>
 
         <div className="mt-2 sm:mt-0 sm:ml-auto flex gap-2">
-          <button className="btn border border-black/10 dark:border-white/10 w-28" onClick={() => onEdit(product)}>
+          <button
+            className="btn border border-black/10 dark:border-white/10 px-3 py-2 rounded-md min-w-[88px]"
+            onClick={() => onEdit(product)}
+          >
             Editar
           </button>
           <button
-            className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 w-28"
+            className="btn border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 px-3 py-2 rounded-md min-w-[88px]"
             disabled={removingId === product.id}
             onClick={() => onRemove(product.id)}
           >

@@ -283,19 +283,19 @@ export default function AdminProductsPage() {
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="p-3">
-                      <div className="h-4 w-48 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-10 w-10 rounded bg-black/10 dark:bg-white/10" />
+                    </td>
+                    <td className="p-3">
+                      <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
                     </td>
                     <td className="p-3">
                       <div className="h-4 w-20 rounded bg-black/10 dark:bg-white/10" />
                     </td>
                     <td className="p-3">
-                      <div className="h-4 w-14 rounded bg-black/10 dark:bg-white/10" />
+                      <div className="h-4 w-20 rounded bg-black/10 dark:bg-white/10" />
                     </td>
                     <td className="hidden p-3 lg:table-cell">
                       <div className="h-4 w-40 rounded bg-black/10 dark:bg-white/10" />
-                    </td>
-                    <td className="p-3">
-                      <div className="h-4 w-64 rounded bg-black/10 dark:bg-white/10" />
                     </td>
                     <td className="p-3">
                       <div className="ml-auto h-8 w-28 rounded bg-black/10 dark:bg-white/10" />
@@ -305,7 +305,7 @@ export default function AdminProductsPage() {
 
               {!loading && items.length === 0 && (
                 <tr>
-                  <td className="p-6 text-center text-slate-600 dark:text-slate-300" colSpan={6}>
+                  <td className="p-6 text-center text-slate-600 dark:text-slate-300" colSpan={7}>
                     Nenhum produto encontrado.
                   </td>
                 </tr>
