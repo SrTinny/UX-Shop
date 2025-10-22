@@ -7,6 +7,7 @@ type Props = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   authed: boolean;
+  admin: boolean;
   theme: "light" | "dark";
   toggleTheme: () => void;
   onLogout: () => void;
@@ -15,7 +16,7 @@ type Props = {
 
 import navigation from '@/lib/navigation';
 
-export default function MobileNav({ open, setOpen, authed, theme, toggleTheme, onLogout }: Props) {
+export default function MobileNav({ open, setOpen, authed, admin, theme, toggleTheme, onLogout }: Props) {
   return (
     <>
       {/* Drawer overlay - visible when open */}
@@ -62,6 +63,13 @@ export default function MobileNav({ open, setOpen, authed, theme, toggleTheme, o
               <Link key={item.label} href={item.href ?? '#'} className="block w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand mb-1">{item.label}</Link>
             )
           ))}
+
+          {/* Admin link (visible only to authenticated admins) */}
+          {authed && admin && (
+            <div className="mt-3">
+              <Link href="/admin/products" className="block w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-brand mb-1">Admin</Link>
+            </div>
+          )}
 
           <div className="mt-2">
             <button onClick={toggleTheme} className="w-full rounded-md border border-black/10 px-3 py-2 text-left text-sm dark:border-white/10">

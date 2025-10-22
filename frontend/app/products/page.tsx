@@ -279,7 +279,7 @@ export default function ProductsPage() {
   
 
   return (
-    <main className="mx-auto max-w-5xl p-6 space-y-6">
+    <main className="mx-auto max-w-screen-xl p-6 space-y-6">
       <LoginModal
         open={showLoginModal}
         onClose={() => setShowLoginModal(false)}
@@ -336,7 +336,7 @@ export default function ProductsPage() {
 
       {/* Skeleton */}
       {loading && (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+        <ul className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" aria-busy="true">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i} className="card p-4 animate-pulse">
               <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 rounded mb-3" />
@@ -366,7 +366,7 @@ export default function ProductsPage() {
       {/* Lista */}
       {!loading && hasResults && (
         <>
-          <ul className="grid gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 auto-rows-fr">
+          <ul className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-fr">
             {items.map((p) => (
               <ProductCard key={p.id} product={p} searchTerm={search} onAddToCart={addToCart} />
             ))}

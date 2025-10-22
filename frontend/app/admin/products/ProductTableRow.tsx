@@ -73,9 +73,9 @@ export default function ProductTableRow({ product, onEdit, onRemove, removingId,
       </td>
       <td className="hidden p-3 text-slate-600 dark:text-slate-300 lg:table-cell">{product.description ?? "—"}</td>
       <td className="p-3">
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 flex-col sm:flex-row">
           <button
-            className="inline-flex items-center gap-2 px-3 py-2 border border-black/10 rounded-md"
+            className="inline-flex items-center gap-2 px-3 py-2 border border-black/10 rounded-md w-full sm:w-auto"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(product);
@@ -85,7 +85,7 @@ export default function ProductTableRow({ product, onEdit, onRemove, removingId,
             <span className="sr-only">Editar {product.name}</span>
           </button>
           <button
-            className="inline-flex items-center gap-2 px-3 py-2 border border-red-600 text-red-600 rounded-md hover:bg-red-600 hover:text-white disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 border border-red-600 text-red-600 rounded-md hover:bg-red-600 hover:text-white disabled:opacity-50 w-full sm:w-auto"
             disabled={removingId === product.id}
             onClick={(e) => {
               e.stopPropagation();

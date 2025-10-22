@@ -57,8 +57,8 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
   };
 
   return (
-    <li className="card p-3 flex flex-col gap-2 h-full group transform transition-transform duration-150 hover:scale-102 hover:shadow-md focus-within:scale-102 focus-within:shadow-md">
-      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg bg-black/5">
+    <li className="card p-1 sm:p-2 md:p-3 flex flex-col gap-2 h-full group transform transition-transform duration-150 hover:scale-102 hover:shadow-md focus-within:scale-102 focus-within:shadow-md">
+      <div className="relative w-full aspect-[4/3] sm:aspect-[3/2] lg:aspect-[4/3] xl:aspect-[3/2] 2xl:aspect-[4/3] overflow-hidden rounded-lg bg-black/5">
         {/* Badge for tag */}
         {product.tag && (
           <span
@@ -80,8 +80,8 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
         />
       </div>
 
-      <div className="flex-1 min-h-16 flex flex-col items-center text-center">
-        <h3 className="font-medium text-sm leading-snug">{highlight(product.name, searchTerm.trim())}</h3>
+      <div className="flex-1 min-h-10 md:min-h-12 flex flex-col items-center text-center">
+        <h3 className="font-medium text-sm md:text-sm lg:text-sm xl:text-base leading-snug">{highlight(product.name, searchTerm.trim())}</h3>
         {product.description && (
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
             {product.description}
@@ -91,7 +91,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
 
       <div className="flex items-center justify-center flex-col gap-1">
         <div className="text-sm text-center">
-          <div className="font-semibold text-sm">{formatBRL(product.price)}</div>
+          <div className="font-semibold text-sm md:text-sm lg:text-sm xl:text-base">{formatBRL(product.price)}</div>
           <div
             className={clsx(
               'mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs',
@@ -118,7 +118,7 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
           title={product.stock <= 0 ? 'Sem estoque' : 'Adicionar ao carrinho'}
           aria-disabled={product.stock <= 0 || adding}
         >
-          {adding ? 'Adicionando…' : <PlusIcon className="h-4 w-4" />}
+          {adding ? '…' : <PlusIcon className="h-3 w-3" />}
         </button>
       </div>
     </li>

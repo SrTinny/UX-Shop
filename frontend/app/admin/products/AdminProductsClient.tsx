@@ -214,13 +214,13 @@ export default function AdminProductsPage() {
           </label>
           <input
             id="search"
-            className="input-base flex-1"
+            className="input-base flex-1 min-w-0"
             placeholder="Buscar por nome…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Buscar produtos por nome"
           />
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0 sm:justify-end">
               <button onClick={load} className="btn btn-primary whitespace-nowrap">
                 {loading ? "Buscando…" : "Buscar"}
               </button>
@@ -253,7 +253,7 @@ export default function AdminProductsPage() {
           {showOnlyOutOfStock && (
             <div className="text-sm text-slate-600 mb-2">Filtro: <strong>Somente sem estoque</strong></div>
           )}
-          <section className="grid gap-3 md:hidden">
+          <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:hidden">
             {filteredItems.map((p) => (
               <ProductAdminCard key={p.id} product={p} onEdit={startEdit} onRemove={remove} removingId={removingId} />
             ))}

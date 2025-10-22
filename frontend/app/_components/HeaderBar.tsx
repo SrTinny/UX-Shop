@@ -270,7 +270,7 @@ export default function HeaderBar() {
     </header>
 
     {/* Mobile menu managed by MobileNav component (rendered outside header to avoid stacking issues) */}
-    <MobileNav open={open} setOpen={setOpen} authed={authed} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />
+  <MobileNav open={open} setOpen={setOpen} authed={authed} admin={admin} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />
     </>
   );
 }
