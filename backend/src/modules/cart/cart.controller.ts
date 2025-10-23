@@ -52,7 +52,7 @@ export async function addItem(req: Request, res: Response) {
   const { productId, quantity } = parsed.data;
 
   // valida produto existir
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true } });
   if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
 
   const cart = await getOrCreateCartByUserId(req.user.id);

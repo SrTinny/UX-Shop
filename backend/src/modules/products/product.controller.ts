@@ -280,7 +280,7 @@ export async function createProduct(req: Request, res: Response) {
 export async function updateProduct(req: Request, res: Response) {
   const { id } = req.params
 
-  const current = await prisma.product.findUnique({ where: { id: String(id) } })
+  const current = await prisma.product.findUnique({ where: { id: String(id) }, select: { id: true } })
   if (!current) return res.status(404).json({ message: 'Produto não encontrado' })
 
   const parsed = updateProductSchema.safeParse(req.body)
@@ -377,7 +377,7 @@ export async function updateProduct(req: Request, res: Response) {
 export async function deleteProduct(req: Request, res: Response) {
   const { id } = req.params
 
-  const current = await prisma.product.findUnique({ where: { id: String(id) } })
+  const current = await prisma.product.findUnique({ where: { id: String(id) }, select: { id: true } })
   if (!current) return res.status(404).json({ message: 'Produto não encontrado' })
 
   await prisma.product.delete({ where: { id: String(id) } })
