@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from 'react';
 import { CartIcon } from "@/app/components/Icons";
 import clsx from "clsx";
 
@@ -16,6 +17,22 @@ type Props = {
 
 export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cartCount, badgePulse, hideLogout }: Props) {
   const badge = cartCount > 9 ? '+9' : String(cartCount);
+  const [notifCount, setNotifCount] = useState<number>(0);
+
+  useEffect(() => {
+    const compute = () => {
+      try {
+        const raw = localStorage.getItem('ux:notifications:state');
+        if (!raw) { setNotifCount(0); return; }
+        const arr = JSON.parse(raw) as Array<{ unread?: boolean }>;
+        const c = arr.filter((i) => i.unread).length;
+        setNotifCount(c);
+      } catch { setNotifCount(0); }
+    };
+    compute();
+    window.addEventListener('notifications:changed', compute as EventListener);
+    return () => window.removeEventListener('notifications:changed', compute as EventListener);
+  }, []);
 
   return (
     <div className="flex items-center gap-2">
@@ -28,14 +45,19 @@ export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cart
         )}
       </Link>
 
-      {/* Notifications */}
-      <button aria-label="Notificações" title="Notificações" className="relative p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
+      {/* Notifications (link) - uses same bell icon as BottomNav */}
+      <Link href="/notifications" aria-label="Notificações" title="Notificações" className="relative inline-flex items-center p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 17h5l-1.405-1.405C18.403 14.403 18 13.744 18 13V9a6 6 0 10-12 0v4c0 .744-.403 1.403-1.595 2.595L3 17h5" />
-          <path d="M13.73 21a2 2 0 01-3.46 0" />
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" />
+          <path d="M21 17a3 3 0 01-6 0" />
         </svg>
         <span className="sr-only">Notificações</span>
-      </button>
+        {/** unread badge */}
+        {/** unreadCount read from localStorage */}
+        {notifCount > 0 && (
+          <span aria-hidden className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{notifCount > 9 ? '+9' : notifCount}</span>
+        )}
+      </Link>
 
       {/* Chat */}
       <Link href="/chat" aria-label="Chats" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
