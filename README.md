@@ -1,4 +1,4 @@
-# Projeto UX Software
+# Projeto UX Shop
 
 Projeto Fullstack com loja online (autenticação, carrinho e área administrativa). Frontend em Next.js e backend em Express + Prisma.
 
@@ -24,7 +24,7 @@ Como rodar (resumo)
 1. Backend
 
 ```powershell
-cd "C:\Users\joaov\Documents\Projetos\UX Software\backend"
+cd "C:\Users\joaov\Documents\Projetos\UX Shop\backend"
 npm install
 npm run dev
 ```
@@ -32,7 +32,7 @@ npm run dev
 2. Frontend
 
 ```powershell
-cd "C:\Users\joaov\Documents\Projetos\UX Software\frontend"
+cd "C:\Users\joaov\Documents\Projetos\UX Shop\frontend"
 npm install
 npm run dev
 ```

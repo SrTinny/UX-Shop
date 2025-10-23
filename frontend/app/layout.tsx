@@ -7,7 +7,7 @@ import HeaderBar from './_components/HeaderBar';
 import Footer from './_components/Footer';
 
 export const metadata: Metadata = {
-  title: 'UX Software',
+  title: 'UX Shop',
   description: 'Desafio Fullstack',
 };
 

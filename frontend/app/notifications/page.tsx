@@ -14,7 +14,7 @@ type Notification = {
 const sample: Notification[] = [
   { id: 'n1', title: 'Pedido #234 enviado', body: 'Seu pedido #234 foi enviado e está a caminho. Código de rastreio: ABC123.', time: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), unread: true, category: 'order' },
   { id: 'n2', title: 'Promoção: Headset 20% off', body: 'Aproveite 20% de desconto em headsets até domingo.', time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), unread: true, category: 'promo' },
-  { id: 'n3', title: 'Bem-vindo ao UX Software', body: 'Obrigado por se juntar a nós! Dica: salve seus favoritos para não perder ofertas.', time: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), unread: false, category: 'system' },
+  { id: 'n3', title: 'Bem-vindo ao UX Shop', body: 'Obrigado por se juntar a nós! Dica: salve seus favoritos para não perder ofertas.', time: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), unread: false, category: 'system' },
   { id: 'n4', title: 'Comentário em produto', body: 'Maria comentou: "Ótima qualidade!" no Teclado Gamer.', time: new Date(Date.now() - 1000 * 60 * 20).toISOString(), unread: true, category: 'social' },
 ];
 

@@ -11,7 +11,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Marca */}
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          © {new Date().getFullYear()} UX Software. Todos os direitos reservados.
+          © {new Date().getFullYear()} UX Shop. Todos os direitos reservados.
         </p>
 
         {/* Links úteis */}

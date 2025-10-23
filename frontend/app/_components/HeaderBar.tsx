@@ -144,7 +144,7 @@ export default function HeaderBar() {
     >
   <div className="container mx-auto flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
         {/* Logo (visually hidden on purpose; brand shown in BottomNav on mobile) */}
-        <Link href="/" className="sr-only">UX Software</Link>
+  <Link href="/" className="sr-only">UX Shop</Link>
 
         {/* Search input placed in the header (desktop) */}
         <div className="hidden md:flex flex-1 px-4">

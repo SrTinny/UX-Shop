@@ -1,4 +1,4 @@
-# Backend - UX Software (API)
+# Backend - UX Shop (API)
 
 API em Node.js + TypeScript com Express e Prisma. Fornece endpoints de auth, produtos e carrinho.
 

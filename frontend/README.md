@@ -1,4 +1,4 @@
-# Frontend - UX Software
+# Frontend - UX Shop
 
 Frontend da aplicação (Next.js + React + TypeScript). Consome a API do backend para produtos, carrinho e auth.
 
@@ -35,7 +35,7 @@ frontend/
       1. Instalar dependências
 
       ```powershell
-      cd "C:\Users\joaov\Documents\Projetos\UX Software\frontend"
+  cd "C:\Users\joaov\Documents\Projetos\UX Shop\frontend"
       npm install
       ```
 

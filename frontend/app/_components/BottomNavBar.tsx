@@ -25,7 +25,7 @@ export default function BottomNavBar() {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t" style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}>
       <div className="container mx-auto px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="text-sm font-bold text-brand">uxsoftware</div>
+          <div className="text-sm font-bold text-brand">UX Shop</div>
         </div>
         <div className="flex items-center gap-6">
           <NavItem href="/products" label="Home" icon={<svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M9 21V12h6v9"/></svg>} />
