@@ -45,10 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
 
-          {/* Footer global (hidden on small screens; BottomNavBar used on mobile) */}
-          <div className="hidden md:block">
-            <Footer />
-          </div>
+          {/* Footer global */}
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
