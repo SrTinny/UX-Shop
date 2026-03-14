@@ -1,18 +1,27 @@
+import './config/env'
 import express from 'express'
+import cookieParser from 'cookie-parser'
 import cors, { CorsOptions } from 'cors'
+import helmet from 'helmet'
 import productRoutes from './modules/products/product.routes'
 import categoryRoutes from './modules/categories/category.routes'
 import authRoutes from './modules/auth/auth.routes'
 import cartRoutes from './modules/cart/cart.routes'
 import { errorHandler } from './middlewares/errorHandler'
-import dotenv from 'dotenv'
-
-dotenv.config()
+import { env } from './config/env'
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = env.port
+
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', 1)
+}
+
+app.disable('x-powered-by')
 
 app.use(express.json())
+app.use(cookieParser())
+app.use(helmet({ crossOriginResourcePolicy: false }))
 
 /* ============== CORS ============== */
 // Domínios fixos
@@ -25,7 +34,7 @@ const staticAllowed = [
 // Aceita também quaisquer *previews* do Vercel do seu projeto
 const vercelPreviewRe = /^https:\/\/ux-software(?:-[a-z0-9-]+)?\.vercel\.app$/i
 
-if (process.env.FRONTEND_URL) staticAllowed.push(process.env.FRONTEND_URL)
+if (env.frontendUrl) staticAllowed.push(env.frontendUrl)
 
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
@@ -37,7 +46,7 @@ const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }
 
 // ✅ Aplica CORS globalmente (inclui preflight nas rotas)
