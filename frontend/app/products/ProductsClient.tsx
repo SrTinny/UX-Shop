@@ -41,7 +41,7 @@ export default function ProductsClient() {
 
   const [sort, setSort] = useState<string>('relevance');
   const [category, setCategory] = useState<string>('');
-  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string; slug?: string }[]>([]);
   const [cartQty, setCartQty] = useState<number>(0);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -67,6 +67,7 @@ export default function ProductsClient() {
   }, []);
 
   const searchParams = useSearchParams();
+  const searchParamsKey = searchParams?.toString() ?? '';
 
   const fetchProducts = useCallback(
     async (opts?: {
@@ -115,9 +116,6 @@ export default function ProductsClient() {
           setItems(list);
         }
 
-        if (page === 1 && list.length === 0 && (term ?? '').length > 0) {
-          toast.info('Nenhum produto encontrado para sua busca.');
-        }
       } catch (e: unknown) {
         if (axios.isAxiosError(e)) {
           if (e.code === 'ERR_CANCELED') return;
@@ -160,7 +158,7 @@ export default function ProductsClient() {
 
     void fetchProducts({ term: q.trim(), page: 1, sort: s, category: c });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams?.toString()]);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -173,16 +171,21 @@ export default function ProductsClient() {
     })();
 
     const onCategoriesChanged = (e: Event) => {
-      // if event includes detail with the new category name, apply it to search params
       try {
         const detail = (e as CustomEvent).detail as string | undefined;
         if (detail) {
-          const sp = new URLSearchParams(Array.from(searchParams.entries()));
-          sp.set('category', detail);
+          const normalizedDetail = detail.trim().toLowerCase();
+          const matchedCategory = categoriesList.find((c) =>
+            c.id === detail ||
+            c.name.trim().toLowerCase() === normalizedDetail ||
+            c.slug === normalizedDetail,
+          );
+
+          const sp = new URLSearchParams(searchParamsKey);
+          sp.set('category', matchedCategory?.id ?? detail);
           const url = `/products?${sp.toString()}`;
           router.push(url);
         } else {
-          // refresh categories list
           void (async () => {
             try {
               const res = await api.get('/categories');
@@ -196,7 +199,7 @@ export default function ProductsClient() {
 
     window.addEventListener('categories:changed', onCategoriesChanged as EventListener);
     return () => { mounted = false; window.removeEventListener('categories:changed', onCategoriesChanged as EventListener); };
-  }, [router, searchParams]);
+  }, [router, searchParamsKey, categoriesList]);
 
   
 
@@ -297,9 +300,7 @@ export default function ProductsClient() {
     setSort('relevance');
     setCategory('');
     setPage(1);
-    const params = new URLSearchParams();
-    router.replace(`${pathname}?${params.toString()}`);
-    void fetchProducts({ term: '', page: 1, sort: 'relevance', category: '' });
+    router.replace(pathname);
   }
 
   return (
@@ -322,25 +323,23 @@ export default function ProductsClient() {
             sort={sort}
             category={category}
             categories={categoriesList}
-            onSortChange={async (v) => {
+            onSortChange={(v) => {
               setPage(1);
               setSort(v);
-              const params = new URLSearchParams(searchParams?.toString() ?? '');
+              const params = new URLSearchParams(searchParamsKey);
               if (search.trim()) params.set('search', search.trim());
               if (v) params.set('sort', v); else params.delete('sort');
               if (category) params.set('category', category);
               router.replace(`${pathname}?${params.toString()}`);
-              await fetchProducts({ term: search.trim(), page: 1, sort: v, category });
             }}
-            onFilterChange={async (v) => {
+            onFilterChange={(v) => {
               setPage(1);
               setCategory(v);
-              const params = new URLSearchParams(searchParams?.toString() ?? '');
+              const params = new URLSearchParams(searchParamsKey);
               if (search.trim()) params.set('search', search.trim());
               if (sort) params.set('sort', sort);
               if (v) params.set('category', v); else params.delete('category');
               router.replace(`${pathname}?${params.toString()}`);
-              await fetchProducts({ term: search.trim(), page: 1, sort, category: v });
             }}
           />
           {/* compact toggle moved to HeaderBar */}
@@ -388,13 +387,18 @@ export default function ProductsClient() {
             ))}
           </ul>
 
-          <div aria-hidden>
-            {hasMore && (
-              <div className="flex justify-center mt-2">
-                <div ref={sentinelRef} style={{ width: '1px', height: '1px' }} />
-              </div>
-            )}
-          </div>
+          {hasMore && (
+            <div className="flex flex-col items-center gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => void loadMore()}
+                className="btn btn-outline"
+              >
+                Carregar mais produtos
+              </button>
+              <div ref={sentinelRef} style={{ width: '1px', height: '1px' }} aria-hidden />
+            </div>
+          )}
         </>
       )}
     </main>

@@ -36,8 +36,9 @@ export default function HeaderBar() {
   };
 
   const navigateWithQuery = (v: string) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (v.trim()) params.set('search', v.trim());
+    else params.delete('search');
     const qs = params.toString();
     router.push(qs ? `/products?${qs}` : '/products');
   };
@@ -148,11 +149,24 @@ export default function HeaderBar() {
 
   
 
-  // keep ready guard as before
-  if (!ready) return null;
-
   // Esconde HeaderBar na tela de login
   if (path === "/login") return null;
+
+  if (!ready) {
+    return (
+      <header
+        className="sticky top-0 z-40 border-b"
+        style={{
+          background: 'var(--color-header)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="h-10 w-full max-w-xl animate-pulse rounded-md bg-black/10 dark:bg-white/10" />
+        </div>
+      </header>
+    );
+  }
 
   // NavLink was removed; DesktopNav and MobileNav handle rendering navigation items
 

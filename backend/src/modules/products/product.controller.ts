@@ -16,6 +16,10 @@ function isPrismaKnownError(e: unknown): e is Prisma.PrismaClientKnownRequestErr
   return e instanceof Prisma.PrismaClientKnownRequestError
 }
 
+function looksLikeUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
 /* ========= Schemas ========= */
 // use z.coerce para aceitar strings vindas do front
 const createProductSchema = z.object({
@@ -62,6 +66,9 @@ export async function listProducts(req: Request, res: Response) {
   if (category) {
     // try to match an existing Category by slug or name; if found, filter by categoryId
     const catParam = String(category).trim()
+    if (looksLikeUuid(catParam)) {
+      conditions.push({ categoryId: catParam })
+    } else {
     const catSlug = slugify(catParam)
     const foundCat = await prisma.category.findFirst({ where: { OR: [{ slug: catSlug }, { name: { equals: catParam, mode: 'insensitive' as const } }] } })
     if (foundCat) {
@@ -74,6 +81,7 @@ export async function listProducts(req: Request, res: Response) {
           { description: { contains: category, mode: 'insensitive' as const } },
         ],
       })
+    }
     }
   }
 

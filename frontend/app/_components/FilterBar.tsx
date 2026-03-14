@@ -42,7 +42,7 @@ export default function FilterBar({ sort, category, onSortChange, onFilterChange
               >
                 <option value="">Todas</option>
                 {categories && categories.length > 0 ? (
-                  categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)
+                  categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)
                 ) : (
                   <>
                     <option value="eletronicos">Eletrônicos</option>
