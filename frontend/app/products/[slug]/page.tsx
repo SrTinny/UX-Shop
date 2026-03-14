@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { hydrateSession } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
@@ -132,25 +133,61 @@ export default function ProductPage() {
     }
   }
 
-  if (loading) return <main className="mx-auto max-w-screen-xl p-6">Carregando…</main>;
-  if (!product) return <main className="mx-auto max-w-screen-xl p-6">Produto não encontrado</main>;
+  if (loading) return (
+    <main className="mx-auto max-w-screen-xl p-4 md:p-6">
+      <div className="h-5 w-32 rounded bg-slate-200 dark:bg-slate-800 mb-6 animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-pulse">
+        <div className="md:col-span-5">
+          <div className="aspect-[4/3] w-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+        <div className="card p-4 md:col-span-7 space-y-4">
+          <div className="h-7 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-1/3 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="space-y-2">
+            <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-5/6 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-4/6 rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 w-40 rounded-lg bg-slate-200 dark:bg-slate-800" />
+            <div className="h-10 w-28 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+  if (!product) return (
+    <main className="mx-auto max-w-screen-xl p-4 md:p-6">
+      <div className="card p-8 text-center">
+        <p className="text-[var(--color-text)] font-medium">Produto não encontrado</p>
+        <Link href="/products" className="btn btn-primary mt-4">Ver produtos</Link>
+      </div>
+    </main>
+  );
 
   return (
-    <main className="mx-auto max-w-screen-xl p-6">
+    <main className="mx-auto max-w-screen-xl p-4 md:p-6">
+      <Link href="/products" className="inline-flex items-center gap-1 text-sm text-brand hover:underline mb-4">
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Voltar para produtos
+      </Link>
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-5">
-          <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden">
-            <Image src={product.imageUrl ?? '/placeholder.png'} alt={product.name} width={1200} height={900} className="object-cover w-full h-auto" />
+          <div className="card w-full overflow-hidden rounded-2xl">
+            <div className="relative w-full aspect-[4/3]">
+              <Image src={product.imageUrl ?? '/placeholder.png'} alt={product.name} fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover" />
+            </div>
           </div>
         </div>
 
-        <div className="md:col-span-7 flex flex-col gap-4">
-          <h1 className="text-2xl font-semibold">{product.name}</h1>
+        <div className="card p-4 md:col-span-7 flex flex-col gap-4">
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">{product.name}</h1>
 
           <div className="flex items-center gap-4">
-            <div className="text-2xl font-bold">{formatBRL(product.price)}</div>
+            <div className="text-2xl font-bold text-brand">{formatBRL(product.price)}</div>
             <div className="text-sm">
-              {product.stock > 0 ? <span className="text-green-600">Em estoque: {product.stock}</span> : <span className="text-red-600">Sem estoque</span>}
+              {product.stock > 0 ? <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Em estoque: {product.stock}</span> : <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Sem estoque</span>}
             </div>
           </div>
 
@@ -164,13 +201,13 @@ export default function ProductPage() {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-            <button onClick={handleAddToCart} disabled={product.stock <= 0 || adding} className="btn bg-brand text-white px-4 py-2 rounded">{adding ? '…' : 'Adicionar ao carrinho'}</button>
-            <button onClick={handleBuyNow} disabled={product.stock <= 0} className="btn border px-4 py-2 rounded">Compre agora</button>
+            <button onClick={handleAddToCart} disabled={product.stock <= 0 || adding} className="btn btn-primary">{adding ? 'Adicionando…' : 'Adicionar ao carrinho'}</button>
+            <button onClick={handleBuyNow} disabled={product.stock <= 0} className="btn btn-outline">Comprar agora</button>
           </div>
 
           <div className="mt-4">
-            <h2 className="font-semibold">Descrição</h2>
-            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">{product.description ?? 'Sem descrição disponível.'}</p>
+            <h2 className="font-semibold text-[var(--color-text)]">Descrição</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line">{product.description ?? 'Sem descrição disponível.'}</p>
           </div>
 
           <div className="mt-4 text-sm text-slate-500">Vendas: <span className="font-medium">Dados de vendas indisponíveis</span></div>
@@ -179,7 +216,7 @@ export default function ProductPage() {
 
       {related.length > 0 && (
         <section className="mt-8">
-          <h3 className="text-lg font-semibold mb-4">Produtos relacionados</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Produtos relacionados</h3>
           <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {related.map((r) => (
               <ProductCard key={r.id} product={r} searchTerm="" onAddToCart={async (id: string) => {

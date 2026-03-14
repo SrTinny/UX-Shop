@@ -1,11 +1,11 @@
 import React, { Suspense } from 'react';
-import ProductsPage from './products/page';
-import ProductsPageSkeleton from './_components/ProductsPageSkeleton';
+import HomeClient from './HomeClient';
+import HomePageSkeleton from './_components/HomePageSkeleton';
 
 export default function Page() {
 	return (
-		<Suspense fallback={<ProductsPageSkeleton />}>
-			<ProductsPage />
+		<Suspense fallback={<HomePageSkeleton />}>
+			<HomeClient />
 		</Suspense>
 	);
 }

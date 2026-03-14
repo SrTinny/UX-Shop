@@ -40,8 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Toaster global */}
           <Toaster richColors position="top-right" />
 
-          {/* Conteúdo das páginas */}
-          {children}
+          {/* Conteúdo das páginas — pb-20 para não ficar por baixo do BottomNavBar no mobile */}
+          <div className="pb-20 md:pb-0">
+            {children}
+          </div>
 
           {/* Footer global (hidden on small screens; BottomNavBar used on mobile) */}
           <div className="hidden md:block">

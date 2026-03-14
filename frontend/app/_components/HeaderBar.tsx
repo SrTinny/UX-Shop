@@ -183,16 +183,16 @@ export default function HeaderBar() {
       }}
     >
   <div className="container mx-auto flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
-        {/* Logo (visually hidden on purpose; brand shown in BottomNav on mobile) */}
-  <Link href="/" className="sr-only">UX Shop</Link>
+        {/* Logo - visible brand link */}
+  <Link href="/" className="hidden md:inline-flex shrink-0 items-center font-bold text-lg text-brand" aria-label="UX Shop - página inicial">UX Shop</Link>
 
         {/* Search input placed in the header (desktop) */}
-        <div className="hidden md:flex flex-1 px-4">
-          <div className="relative">
+        <div className="hidden md:flex flex-1 px-2">
+          <div className="relative w-full">
             <input
               id="header-search-input"
               data-header-search="true"
-              className="w-full pl-9 pr-3 py-2 rounded-md border text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]"
+              className="w-full pl-9 pr-3 py-2 rounded-full border text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]"
               placeholder="Buscar produtos..."
               value={query}
               onChange={(e) => {
@@ -241,7 +241,7 @@ export default function HeaderBar() {
               <input
                 id="header-search-input-mobile"
                 ref={mobileSearchRef}
-                className="w-full pl-9 pr-3 py-2 rounded-md border text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]"
+                className="w-full pl-9 pr-3 py-2 rounded-full border text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand shadow-sm bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]"
                 placeholder="Buscar produtos..."
                 value={query}
                 onChange={(e) => {

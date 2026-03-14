@@ -7,17 +7,18 @@ import clsx from "clsx";
 
 type Props = {
   authed: boolean;
+  admin: boolean;
   theme: "light" | "dark";
   toggleTheme: () => void;
   onLogout: () => void;
   cartCount: number;
   badgePulse?: boolean;
-  hideLogout?: boolean;
 };
 
-export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cartCount, badgePulse, hideLogout }: Props) {
+export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogout, cartCount, badgePulse }: Props) {
   const badge = cartCount > 9 ? '+9' : String(cartCount);
   const [notifCount, setNotifCount] = useState<number>(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const compute = () => {
@@ -36,8 +37,7 @@ export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cart
 
   return (
     <div className="flex items-center gap-2">
-      {/* Cart */}
-  <Link href="/cart" aria-label="Carrinho" className="relative inline-flex items-center p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
+      <Link href="/cart" aria-label="Carrinho" className="relative inline-flex items-center p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
         <CartIcon className="h-6 w-6" />
         <span className="sr-only">Carrinho</span>
         {cartCount > 0 && (
@@ -45,78 +45,95 @@ export default function ActionIcons({ authed, theme, toggleTheme, onLogout, cart
         )}
       </Link>
 
-      {/* Notifications (link) - uses same bell icon as BottomNav */}
-      <Link href="/notifications" aria-label="Notificações" title="Notificações" className="relative inline-flex items-center p-2 rounded-md hover:bg-[var(--color-hover)]" style={{ borderColor: 'var(--color-border)' }}>
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" />
-          <path d="M21 17a3 3 0 01-6 0" />
-        </svg>
-        <span className="sr-only">Notificações</span>
-        {/** unread badge */}
-        {/** unreadCount read from localStorage */}
-        {notifCount > 0 && (
-          <span aria-hidden className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">{notifCount > 9 ? '+9' : notifCount}</span>
-        )}
-      </Link>
-
-      {/* Chat */}
-      <Link href="/chat" aria-label="Chats" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <span className="sr-only">Chats</span>
-      </Link>
-
-      {/* Admin icon removed - admin link remains in navigation menus */}
-
-      {/* Theme toggle */}
-  <button onClick={toggleTheme} title="Alternar tema" className="p-2 rounded-md border" style={{ borderColor: 'var(--color-border)' }}>
-        {theme === 'light' ? (
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-          </svg>
-        ) : (
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-          </svg>
-        )}
-        <span className="sr-only">Alternar tema</span>
-      </button>
-
-      {/* User / Login + Logout */}
-      {!authed ? (
-  <Link href="/login" aria-label="Login" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
+      <div
+        className="relative"
+        onMouseEnter={() => setMenuOpen(true)}
+        onMouseLeave={() => setMenuOpen(false)}
+        onFocus={() => setMenuOpen(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            setMenuOpen(false);
+          }
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Abrir menu de perfil"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          className="relative p-2 rounded-md border hover:bg-[var(--color-hover)]"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 00-3-3.87" />
             <path d="M4 21v-2a4 4 0 013-3.87" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          <span className="sr-only">Login</span>
-        </Link>
-      ) : (
-        <>
-          <Link href="/account" aria-label="Minha conta" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 00-3-3.87" />
-              <path d="M4 21v-2a4 4 0 013-3.87" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span className="sr-only">Conta</span>
-          </Link>
-          {/* Logout button can be hidden by parent (so parent can render it last in desktop) */}
-          {!hideLogout && (
-            <button onClick={onLogout} title="Sair" className="p-2 rounded-md hover:bg-[var(--color-hover)]">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                <path d="M16 17l5-5-5-5" />
-                <path d="M21 12H9" />
-              </svg>
-              <span className="sr-only">Sair</span>
-            </button>
+          {notifCount > 0 && (
+            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-brand text-white text-[10px] leading-none h-5 min-w-[1.25rem] px-1.5 font-medium">
+              {notifCount > 9 ? '+9' : notifCount}
+            </span>
           )}
-        </>
-      )}
+        </button>
+
+        <div
+          role="menu"
+          className={clsx(
+            'absolute right-0 mt-2 w-64 rounded-xl border p-2 shadow-xl transition-opacity',
+            menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none',
+          )}
+          style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+        >
+          <div className="flex flex-col gap-1">
+            {authed ? (
+              <Link href="/account" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                Minha conta
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                  Entrar
+                </Link>
+                <Link href="/register" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                  Criar conta
+                </Link>
+              </>
+            )}
+
+            <Link href="/notifications" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+              Notificações
+            </Link>
+            <Link href="/chat" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+              Chat
+            </Link>
+
+            {authed && admin && (
+              <Link href="/admin/products" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                Painel admin
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-md px-3 py-2 text-left text-sm hover:bg-[var(--color-hover)]"
+            >
+              {theme === 'light' ? 'Tema escuro' : 'Tema claro'}
+            </button>
+
+            {authed && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-[var(--color-hover)]"
+              >
+                Sair
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
