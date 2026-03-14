@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
 import BottomNavBar from './BottomNavBar';
-import { CartIcon } from '@/app/components/Icons';
+import { CartIcon } from '@/app/_components/Icons';
 // clsx not used here; navigation components handle conditional classes
 import { useRouter, useSearchParams } from 'next/navigation';
 

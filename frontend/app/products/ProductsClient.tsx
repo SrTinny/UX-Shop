@@ -7,7 +7,7 @@ import axios from 'axios';
 import { api } from '@/lib/api';
 import { hydrateSession } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
-import LoginModal from '@/app/components/LoginModal';
+import LoginModal from '@/app/_components/LoginModal';
 import { toast } from 'sonner';
 import ProductCard from '@/app/_components/ProductCard';
 import FilterBar from '@/app/_components/FilterBar';

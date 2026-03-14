@@ -6,7 +6,7 @@ import axios from 'axios';
 import { api } from '@/lib/api';
 import { hydrateSession } from '@/lib/auth';
 import { toast } from 'sonner';
-import { PlusIcon, MinusIcon, TrashIcon } from '@/app/components/Icons';
+import { PlusIcon, MinusIcon, TrashIcon } from '@/app/_components/Icons';
 
 type CartItem = {
   id: string;

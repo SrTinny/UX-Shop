@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from 'react';
-import { CartIcon } from "@/app/components/Icons";
+import { CartIcon } from "@/app/_components/Icons";
 import clsx from "clsx";
 
 type Props = {

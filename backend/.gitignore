@@ -48,7 +48,9 @@ docker-compose.override.yml
 .docker/
 
 # Prisma / TypeORM
-prisma/migrations/
+# Prisma migrations devem ser versionadas no repositorio
+!prisma/migrations/
+!prisma/migrations/**
 ormconfig.json
 ormconfig.js
 
@@ -59,5 +61,6 @@ ormconfig.js
 # Redis / DB dumps (se usar)
 dump.rdb
 *.sql
+!prisma/migrations/**/*.sql
 
 /src/generated/prisma
