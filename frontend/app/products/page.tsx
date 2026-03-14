@@ -1,11 +1,5 @@
-import React, { Suspense } from 'react';
-import ProductsClient from './ProductsClient';
-import ProductsPageSkeleton from '@/app/_components/ProductsPageSkeleton';
+import { redirect } from 'next/navigation';
 
 export default function ProductsPage() {
-  return (
-    <Suspense fallback={<ProductsPageSkeleton />}>
-      <ProductsClient />
-    </Suspense>
-  );
+  redirect('/');
 }

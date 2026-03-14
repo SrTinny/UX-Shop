@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CartIcon } from "@/app/_components/Icons";
 import clsx from "clsx";
 
@@ -19,6 +19,27 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
   const badge = cartCount > 9 ? '+9' : String(cartCount);
   const [notifCount, setNotifCount] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const openMenu = () => {
+    clearCloseTimer();
+    setMenuOpen(true);
+  };
+
+  const scheduleCloseMenu = () => {
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      setMenuOpen(false);
+      closeTimerRef.current = null;
+    }, 180);
+  };
 
   useEffect(() => {
     const compute = () => {
@@ -32,7 +53,10 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
     };
     compute();
     window.addEventListener('notifications:changed', compute as EventListener);
-    return () => window.removeEventListener('notifications:changed', compute as EventListener);
+    return () => {
+      clearCloseTimer();
+      window.removeEventListener('notifications:changed', compute as EventListener);
+    };
   }, []);
 
   return (
@@ -47,12 +71,12 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
 
       <div
         className="relative"
-        onMouseEnter={() => setMenuOpen(true)}
-        onMouseLeave={() => setMenuOpen(false)}
-        onFocus={() => setMenuOpen(true)}
+        onMouseEnter={openMenu}
+        onMouseLeave={scheduleCloseMenu}
+        onFocus={openMenu}
         onBlur={(e) => {
           if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-            setMenuOpen(false);
+            scheduleCloseMenu();
           }
         }}
       >
@@ -61,8 +85,18 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
           aria-label="Abrir menu de perfil"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((prev) => !prev)}
-          className="relative p-2 rounded-md border hover:bg-[var(--color-hover)]"
+          onClick={() => {
+            clearCloseTimer();
+            setMenuOpen((prev) => !prev);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              clearCloseTimer();
+              setMenuOpen(false);
+              (e.currentTarget as HTMLButtonElement).blur();
+            }
+          }}
+          className="relative z-[1] p-2 rounded-md border hover:bg-[var(--color-hover)]"
           style={{ borderColor: 'var(--color-border)' }}
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -78,45 +112,83 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
         </button>
 
         <div
-          role="menu"
           className={clsx(
-            'absolute right-0 mt-2 w-64 rounded-xl border p-2 shadow-xl transition-opacity',
+            'absolute right-0 top-full z-50 w-64 pt-2 transition-opacity',
             menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none',
           )}
-          style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+          onMouseEnter={openMenu}
+          onMouseLeave={scheduleCloseMenu}
         >
-          <div className="flex flex-col gap-1">
+          <div
+            role="menu"
+            className="rounded-xl border p-2 shadow-xl"
+            style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+          >
+            <div className="flex flex-col gap-1">
             {authed ? (
-              <Link href="/account" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+              <Link
+                href="/account"
+                role="menuitem"
+                className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+                onClick={() => setMenuOpen(false)}
+              >
                 Minha conta
               </Link>
             ) : (
               <>
-                <Link href="/login" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                <Link
+                  href="/login"
+                  role="menuitem"
+                  className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+                  onClick={() => setMenuOpen(false)}
+                >
                   Entrar
                 </Link>
-                <Link href="/register" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+                <Link
+                  href="/register"
+                  role="menuitem"
+                  className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+                  onClick={() => setMenuOpen(false)}
+                >
                   Criar conta
                 </Link>
               </>
             )}
 
-            <Link href="/notifications" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+            <Link
+              href="/notifications"
+              role="menuitem"
+              className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+              onClick={() => setMenuOpen(false)}
+            >
               Notificações
             </Link>
-            <Link href="/chat" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+            <Link
+              href="/chat"
+              role="menuitem"
+              className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+              onClick={() => setMenuOpen(false)}
+            >
               Chat
             </Link>
 
             {authed && admin && (
-              <Link href="/admin/products" role="menuitem" className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]">
+              <Link
+                href="/admin/products"
+                role="menuitem"
+                className="rounded-md px-3 py-2 text-sm hover:bg-[var(--color-hover)]"
+                onClick={() => setMenuOpen(false)}
+              >
                 Painel admin
               </Link>
             )}
 
             <button
               type="button"
-              onClick={toggleTheme}
+              onClick={() => {
+                toggleTheme();
+                setMenuOpen(false);
+              }}
               className="rounded-md px-3 py-2 text-left text-sm hover:bg-[var(--color-hover)]"
             >
               {theme === 'light' ? 'Tema escuro' : 'Tema claro'}
@@ -125,12 +197,16 @@ export default function ActionIcons({ authed, admin, theme, toggleTheme, onLogou
             {authed && (
               <button
                 type="button"
-                onClick={onLogout}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onLogout();
+                }}
                 className="rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-[var(--color-hover)]"
               >
                 Sair
               </button>
             )}
+            </div>
           </div>
         </div>
       </div>
