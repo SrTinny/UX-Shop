@@ -15,7 +15,7 @@ function slugify(s: string) {
 async function main() {
   // --- Admin ---
   const passwordHash = await bcrypt.hash('admin123', 10)
-  await prisma.user.upsert({
+  const admin = await prisma.user.upsert({
     where: { email: 'admin@ux.com' },
     update: {},
     create: {
@@ -26,6 +26,62 @@ async function main() {
       isActive: true,
     },
   })
+
+  const adminAddressCount = await prisma.address.count({ where: { userId: admin.id } })
+  if (adminAddressCount === 0) {
+    const home = await prisma.address.create({
+      data: {
+        userId: admin.id,
+        label: 'Casa',
+        zipCode: '04543011',
+        state: 'SP',
+        city: 'Sao Paulo',
+        neighborhood: 'Itaim Bibi',
+        street: 'Av. Juscelino Kubitschek',
+        number: '2041',
+        complement: 'Torre E',
+      },
+    })
+
+    await prisma.address.create({
+      data: {
+        userId: admin.id,
+        label: 'Escritorio',
+        zipCode: '01310930',
+        state: 'SP',
+        city: 'Sao Paulo',
+        neighborhood: 'Bela Vista',
+        street: 'Av. Paulista',
+        number: '1578',
+        complement: 'Conjunto 402',
+      },
+    })
+
+    await prisma.user.update({
+      where: { id: admin.id },
+      data: { selectedAddressId: home.id },
+    })
+  } else {
+    const adminWithSelectedAddress = await prisma.user.findUnique({
+      where: { id: admin.id },
+      select: { selectedAddressId: true },
+    })
+
+    if (!adminWithSelectedAddress?.selectedAddressId) {
+      const firstAddress = await prisma.address.findFirst({
+        where: { userId: admin.id },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      })
+
+      if (firstAddress) {
+        await prisma.user.update({
+          where: { id: admin.id },
+          data: { selectedAddressId: firstAddress.id },
+        })
+      }
+    }
+  }
 
   // --- Produtos (equipamentos eletrônicos) ---
   // categories to assign

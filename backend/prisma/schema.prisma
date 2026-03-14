@@ -27,10 +27,34 @@ model User {
   isActive        Boolean  @default(false)
   activationToken String?  @unique
   activationTokenExpiresAt DateTime?
+  selectedAddressId String?
+  selectedAddress Address? @relation("SelectedAddress", fields: [selectedAddressId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  addresses       Address[] @relation("UserAddresses")
   carts           Cart[]
   refreshSessions RefreshTokenSession[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([selectedAddressId])
+}
+
+model Address {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation("UserAddresses", fields: [userId], references: [id], onDelete: Cascade)
+  selectedByUsers User[]  @relation("SelectedAddress")
+  label          String
+  zipCode        String
+  state          String
+  city           String
+  neighborhood   String
+  street         String
+  number         String
+  complement     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model RefreshTokenSession {

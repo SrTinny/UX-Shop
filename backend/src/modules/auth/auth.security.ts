@@ -14,7 +14,34 @@ type PublicUserInput = {
   email: string;
   role: Role;
   isActive?: boolean | null;
+  selectedAddress?: PublicAddressInput | null;
 };
+
+type PublicAddressInput = {
+  id: string;
+  label: string;
+  zipCode: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  number: string;
+  complement?: string | null;
+};
+
+export function toPublicAddress(address: PublicAddressInput) {
+  return {
+    id: address.id,
+    label: address.label,
+    zipCode: address.zipCode,
+    state: address.state,
+    city: address.city,
+    neighborhood: address.neighborhood,
+    street: address.street,
+    number: address.number,
+    complement: address.complement ?? null,
+  };
+}
 
 function withCookieDomain(options: CookieOptions): CookieOptions {
   if (!env.authCookieDomain) return options;
@@ -28,6 +55,7 @@ export function toPublicUser(user: PublicUserInput) {
     email: user.email,
     role: user.role,
     isActive: Boolean(user.isActive),
+    selectedAddress: user.selectedAddress ? toPublicAddress(user.selectedAddress) : null,
   };
 }
 

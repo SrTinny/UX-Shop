@@ -19,6 +19,8 @@ export default function HeaderBar() {
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [open, setOpen] = useState(false); // menu mobile
+  const [selectedAddressText, setSelectedAddressText] = useState<string>('');
+  const [selectedAddressMeta, setSelectedAddressMeta] = useState<string>('');
   
   const mobileSearchRef = useRef<HTMLInputElement | null>(null);
   const path = usePathname();
@@ -33,6 +35,16 @@ export default function HeaderBar() {
   const applyAuthState = (user: AuthUser | null | undefined) => {
     setAuthed(Boolean(user));
     setAdmin(user?.role === 'ADMIN');
+
+    if (!user?.selectedAddress) {
+      setSelectedAddressText('Escolher endereco');
+      setSelectedAddressMeta('Cadastre um endereco na sua conta');
+      return;
+    }
+
+    const { label, street, number, city, state } = user.selectedAddress;
+    setSelectedAddressText(label);
+    setSelectedAddressMeta(`${street}, ${number} - ${city}/${state}`);
   };
 
   const navigateWithQuery = (v: string) => {
@@ -186,6 +198,21 @@ export default function HeaderBar() {
         {/* Logo - visible brand link */}
   <Link href="/" className="hidden md:inline-flex shrink-0 items-center font-bold text-lg text-brand" aria-label="UX Shop - página inicial">UX Shop</Link>
 
+        <Link
+          href="/account"
+          className="hidden md:flex min-w-0 max-w-[230px] shrink-0 items-start gap-2 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left transition-colors hover:bg-[var(--color-hover)] lg:max-w-[270px]"
+        >
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 21s7-4.35 7-11a7 7 0 10-14 0c0 6.65 7 11 7 11z" />
+            <circle cx="12" cy="10" r="2.5" />
+          </svg>
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Entregar em</span>
+            <span className="block truncate text-sm font-semibold text-[var(--color-text)]">{selectedAddressText}</span>
+            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{selectedAddressMeta}</span>
+          </span>
+        </Link>
+
         {/* Search input placed in the header (desktop) */}
         <div className="hidden md:flex flex-1 px-2">
           <div className="relative w-full">
@@ -300,6 +327,23 @@ export default function HeaderBar() {
           </button>
         </div>
       </div>
+
+      {authed && (
+        <Link
+          href="/account"
+          className="flex items-start gap-2 border-t border-[var(--color-border)] px-4 py-2 md:hidden"
+        >
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 21s7-4.35 7-11a7 7 0 10-14 0c0 6.65 7 11 7 11z" />
+            <circle cx="12" cy="10" r="2.5" />
+          </svg>
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Entregar em</span>
+            <span className="block truncate text-sm font-semibold text-[var(--color-text)]">{selectedAddressText}</span>
+            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{selectedAddressMeta}</span>
+          </span>
+        </Link>
+      )}
     </header>
 
     {/* Bottom navigation for mobile only */}

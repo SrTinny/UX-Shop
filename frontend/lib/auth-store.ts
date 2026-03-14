@@ -1,9 +1,22 @@
+export type SelectedAddressSummary = {
+  id: string;
+  label: string;
+  zipCode: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  number: string;
+  complement?: string | null;
+};
+
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   role: 'USER' | 'ADMIN';
   isActive?: boolean;
+  selectedAddress?: SelectedAddressSummary | null;
 };
 
 export const AUTH_CHANGED_EVENT = 'auth:changed';

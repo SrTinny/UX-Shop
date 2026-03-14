@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
-import { registerSchema, loginSchema } from './auth.schemas';
+import { addressSchema, registerSchema, loginSchema } from './auth.schemas';
 import {
   addDays,
   addHours,
@@ -16,15 +16,75 @@ import {
   hashToken,
   setAuthCookies,
   signAccessToken,
+  toPublicAddress,
   toPublicUser,
 } from './auth.security';
 
 type RequestWithUser = Request & { user: { id: string; role: 'USER' | 'ADMIN' } };
 
+const addressSelect = {
+  id: true,
+  label: true,
+  zipCode: true,
+  state: true,
+  city: true,
+  neighborhood: true,
+  street: true,
+  number: true,
+  complement: true,
+} as const;
+
 function requireUser(req: Request): asserts req is RequestWithUser {
   if (!req.user) {
     throw new Error('authMiddleware not applied: req.user is missing');
   }
+}
+
+function normalizeAddressInput(input: {
+  label: string;
+  zipCode: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  number: string;
+  complement?: string | undefined;
+}) {
+  return {
+    label: input.label.trim(),
+    zipCode: input.zipCode.replace(/\D/g, '').slice(0, 8),
+    state: input.state.trim().toUpperCase(),
+    city: input.city.trim(),
+    neighborhood: input.neighborhood.trim(),
+    street: input.street.trim(),
+    number: input.number.trim(),
+    complement: input.complement?.trim() ? input.complement.trim() : null,
+  };
+}
+
+async function buildAccountPayload(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      selectedAddress: { select: addressSelect },
+      addresses: {
+        select: addressSelect,
+        orderBy: [{ createdAt: 'desc' }],
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  return {
+    user: toPublicUser(user),
+    addresses: user.addresses.map(toPublicAddress),
+  };
 }
 
 async function revokeRefreshFamily(family: string, reason: string, now: Date) {
@@ -80,7 +140,10 @@ export async function login(req: Request, res: Response) {
   }
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { selectedAddress: { select: addressSelect } },
+  });
   if (!user) return res.status(401).json({ message: 'Credenciais inválidas' });
 
   const ok = await bcrypt.compare(password, user.password);
@@ -117,17 +180,14 @@ export async function login(req: Request, res: Response) {
 export async function me(req: Request, res: Response) {
   requireUser(req);
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    select: { id: true, name: true, email: true, role: true, isActive: true },
-  });
+  const payload = await buildAccountPayload(req.user.id);
 
-  if (!user) {
+  if (!payload) {
     clearAuthCookies(res);
     return res.status(401).json({ message: 'Sessão inválida' });
   }
 
-  return res.json({ user: toPublicUser(user) });
+  return res.json(payload);
 }
 
 // POST /auth/refresh
@@ -143,7 +203,7 @@ export async function refreshSession(req: Request, res: Response) {
     where: { tokenHash: hashToken(refreshToken) },
     include: {
       user: {
-        select: { id: true, name: true, email: true, role: true, isActive: true },
+        select: { id: true, name: true, email: true, role: true, isActive: true, selectedAddress: { select: addressSelect } },
       },
     },
   });
@@ -244,4 +304,124 @@ export async function activate(req: Request, res: Response) {
   });
 
   return res.json({ message: 'Conta ativada com sucesso. Você já pode fazer login.' });
+}
+
+// POST /auth/addresses
+export async function createAddress(req: Request, res: Response) {
+  requireUser(req);
+
+  const parsed = addressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Dados de endereco inválidos', errors: parsed.error.flatten() });
+  }
+
+  const created = await prisma.address.create({
+    data: {
+      userId: req.user.id,
+      ...normalizeAddressInput(parsed.data),
+    },
+    select: { id: true },
+  });
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { selectedAddressId: true } });
+  if (!user?.selectedAddressId) {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { selectedAddressId: created.id },
+    });
+  }
+
+  const payload = await buildAccountPayload(req.user.id);
+  return res.status(201).json(payload);
+}
+
+// PUT /auth/addresses/:id
+export async function updateAddress(req: Request, res: Response) {
+  requireUser(req);
+
+  const parsed = addressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Dados de endereco inválidos', errors: parsed.error.flatten() });
+  }
+
+  const addressId = String(req.params.id || '');
+  const existing = await prisma.address.findFirst({
+    where: { id: addressId, userId: req.user.id },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return res.status(404).json({ message: 'Endereco não encontrado' });
+  }
+
+  await prisma.address.update({
+    where: { id: addressId },
+    data: normalizeAddressInput(parsed.data),
+  });
+
+  const payload = await buildAccountPayload(req.user.id);
+  return res.json(payload);
+}
+
+// POST /auth/addresses/:id/select
+export async function selectAddress(req: Request, res: Response) {
+  requireUser(req);
+
+  const addressId = String(req.params.id || '');
+  const address = await prisma.address.findFirst({
+    where: { id: addressId, userId: req.user.id },
+    select: { id: true },
+  });
+
+  if (!address) {
+    return res.status(404).json({ message: 'Endereco não encontrado' });
+  }
+
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { selectedAddressId: address.id },
+  });
+
+  const payload = await buildAccountPayload(req.user.id);
+  return res.json(payload);
+}
+
+// DELETE /auth/addresses/:id
+export async function deleteAddress(req: Request, res: Response) {
+  requireUser(req);
+
+  const addressId = String(req.params.id || '');
+  const address = await prisma.address.findFirst({
+    where: { id: addressId, userId: req.user.id },
+    select: { id: true },
+  });
+
+  if (!address) {
+    return res.status(404).json({ message: 'Endereco não encontrado' });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const currentUser = await tx.user.findUnique({
+      where: { id: req.user.id },
+      select: { selectedAddressId: true },
+    });
+
+    await tx.address.delete({ where: { id: address.id } });
+
+    if (currentUser?.selectedAddressId === address.id) {
+      const nextAddress = await tx.address.findFirst({
+        where: { userId: req.user.id },
+        orderBy: [{ createdAt: 'asc' }],
+        select: { id: true },
+      });
+
+      await tx.user.update({
+        where: { id: req.user.id },
+        data: { selectedAddressId: nextAddress?.id ?? null },
+      });
+    }
+  });
+
+  const payload = await buildAccountPayload(req.user.id);
+  return res.json(payload);
 }
