@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+import { prisma } from '../config/prisma';
+import { env } from '../config/env';
+import { getAccessTokenFromRequest } from '../modules/auth/auth.security';
 
 export type JwtUser = { id: string; role: 'USER' | 'ADMIN' };
 
@@ -12,17 +13,25 @@ declare module 'express-serve-static-core' {
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) return res.status(401).json({ message: 'Token ausente' });
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const token = getAccessTokenFromRequest(req);
+  if (!token) return res.status(401).json({ message: 'Token ausente' });
 
-  const token = auth.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & { role: 'USER' | 'ADMIN' };
-    const id = payload.sub as string;
-    const role = payload.role;
-    if (!id || !role) return res.status(401).json({ message: 'Token inválido' });
-    req.user = { id, role };
+    const payload = jwt.verify(token, env.jwtSecret) as jwt.JwtPayload;
+    const id = typeof payload.sub === 'string' ? payload.sub : undefined;
+    if (!id) return res.status(401).json({ message: 'Token inválido' });
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true, isActive: true },
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: 'Token inválido ou expirado' });
+    }
+
+    req.user = { id: user.id, role: user.role };
     return next();
   } catch {
     return res.status(401).json({ message: 'Token inválido ou expirado' });

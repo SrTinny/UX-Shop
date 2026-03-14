@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth';
+import { csrfProtection } from '../../middlewares/csrf';
 import {
   getCart,
   addItem,
@@ -12,6 +13,7 @@ const router = Router();
 
 // todas as rotas do carrinho exigem usuário logado
 router.use(authMiddleware);
+router.use(csrfProtection);
 
 // GET /cart
 router.get('/', getCart);
