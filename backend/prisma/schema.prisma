@@ -26,9 +26,31 @@ model User {
   role            Role     @default(USER)
   isActive        Boolean  @default(false)
   activationToken String?  @unique
+  activationTokenExpiresAt DateTime?
   carts           Cart[]
+  refreshSessions RefreshTokenSession[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model RefreshTokenSession {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family              String
+  tokenHash           String   @unique
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  revokedReason       String?
+  replacedByTokenHash String?
+  userAgent           String?
+  ipAddress           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([family])
+  @@index([expiresAt])
 }
 
 /* ====== Produtos / Carrinho ====== */
