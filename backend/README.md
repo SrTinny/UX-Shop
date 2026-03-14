@@ -1,51 +1,71 @@
 # Backend - UX Shop (API)
 
-API em Node.js + TypeScript com Express e Prisma. Fornece endpoints de auth, produtos e carrinho.
+API em Node.js + TypeScript com Express e Prisma/PostgreSQL.
 
-Stack
+## Stack
 - Node.js, TypeScript, Express, Prisma
-- Zod para validação, JWT para autenticação
+- Zod para validação
 
-Autenticação
-- Access token em cookie HttpOnly de curta duração
-- Refresh token rotativo em cookie HttpOnly
-- Proteção CSRF por double-submit token (`X-CSRF-Token`)
-- Endpoint de sessão atual em `GET /auth/me`
+## Segurança de autenticação
+- Access token em cookie HttpOnly de curta duração.
+- Refresh token rotativo em cookie HttpOnly.
+- Proteção CSRF por double-submit token (`X-CSRF-Token`).
+- Sessão atual via `GET /auth/me`.
 
-Variáveis de ambiente relevantes
-- `JWT_SECRET` obrigatório
-- `JWT_ACCESS_TOKEN_MINUTES` opcional, padrão `15`
-- `JWT_REFRESH_TOKEN_DAYS` opcional, padrão `30`
-- `AUTH_ACTIVATION_TOKEN_HOURS` opcional, padrão `24`
-- `AUTH_COOKIE_SECURE` opcional, padrão `true` em produção
-- `AUTH_COOKIE_SAME_SITE` opcional, padrão `none` quando cookie seguro e `lax` em desenvolvimento
-- `AUTH_COOKIE_DOMAIN` opcional
+## Endpoints de auth (resumo)
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `GET /auth/activate/:token`
 
-Estrutura (resumo)
+## Endereços de cliente
+- `POST /auth/addresses`
+- `PUT /auth/addresses/:id`
+- `POST /auth/addresses/:id/select`
+- `DELETE /auth/addresses/:id`
 
-```markdown
-src/
-  config/
-    prisma.ts
-  middlewares/
-    auth.ts
-    errorHandler.ts
-  modules/
-    auth/
-      auth.controller.ts
-      auth.routes.ts
-      auth.schemas.ts
-    products/
-      product.controller.ts
-      product.routes.ts
-      product.service.ts
-    cart/
-      cart.controller.ts
-      cart.routes.ts
-      cart.schemas.ts
-  index.ts
-prisma/
-  migrations/
-  schema.prisma
-  seed.ts
+O usuário mantém `selectedAddressId`, usado pelo frontend para mostrar o endereço escolhido no header.
+
+## Prisma (resumo)
+- `User` com `selectedAddressId`.
+- `Address` vinculada ao `User`.
+- Migrations em `prisma/migrations`.
+
+## Como rodar
+```powershell
+cd backend
+npm install
+npm run dev
+```
+
+Build:
+
+```powershell
+npm run build
+```
+
+Migrations + seed (dev):
+
+```powershell
+npx prisma migrate dev --name <nome>
+npx prisma generate
+npx prisma db seed
+```
+
+## Variáveis de ambiente relevantes
+- `DATABASE_URL` (obrigatória)
+- `JWT_SECRET` (obrigatória)
+- `PORT` (default `3000`)
+- `FRONTEND_URL`
+- `JWT_ACCESS_TOKEN_MINUTES` (default `15`)
+- `JWT_REFRESH_TOKEN_DAYS` (default `30`)
+- `AUTH_ACTIVATION_TOKEN_HOURS` (default `24`)
+- `AUTH_COOKIE_SECURE`
+- `AUTH_COOKIE_SAME_SITE`
+- `AUTH_COOKIE_DOMAIN`
+
+## Seed
+- Admin criado por padrão: `admin@ux.com` / `admin123`
 

@@ -1,30 +1,25 @@
 # Projeto UX Shop
 
-Projeto Fullstack com loja online (autenticação, carrinho e área administrativa). Frontend em Next.js e backend em Express + Prisma.
+Monorepo fullstack de e-commerce com frontend em Next.js e backend em Express + Prisma/PostgreSQL.
 
-Tecnologias principais
+## Stack
 - Frontend: Next.js (App Router), React, TypeScript, TailwindCSS
-- Backend: Express, TypeScript, Prisma, PostgreSQL
-- Deploy: Vercel (frontend), Render (backend)
+- Backend: Express, TypeScript, Prisma
+- Banco: PostgreSQL
 
-Estrutura do projeto
+## Estrutura
+```text
+.
+├── frontend/
+├── backend/
+└── README.md
+```
 
-```markdown
-/ (raiz)
-├── frontend/   → Aplicação Next.js (cliente + admin)
-├── backend/    → API Express (autenticação, produtos, carrinho)
-└── README.md   → Este arquivo
-
-````
-
-Cada pasta contém seu próprio `README.md` com instruções mais detalhadas: `frontend/README.md` e `backend/README.md`.
-
-Como rodar (resumo)
-
+## Como rodar local
 1. Backend
 
 ```powershell
-cd "C:\Users\joaov\Documents\Projetos\UX Shop\backend"
+cd backend
 npm install
 npm run dev
 ```
@@ -32,21 +27,28 @@ npm run dev
 2. Frontend
 
 ```powershell
-cd "C:\Users\joaov\Documents\Projetos\UX Shop\frontend"
+cd frontend
 npm install
 npm run dev
 ```
 
-Variáveis importantes:
+## Variáveis importantes
 - Backend: `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
 - Frontend: `NEXT_PUBLIC_API_URL`
 
-Usuários de teste
+## Usuário seed
+- Admin: `admin@ux.com` / `admin123`
 
-- Admin: `admin@example.com` / `123456`
-- Cliente: `user@example.com` / `123456`
+## Atualizações recentes (desde 9b0a2d4)
+- Endurecimento de segurança no backend: validação obrigatória de env, cookies HttpOnly, refresh token rotativo e CSRF.
+- Sessão do frontend migrada para cookies HttpOnly com hidratação por `GET /auth/me`.
+- Home e fluxos de compra reformulados com foco em responsividade.
+- Footer redesenhado em estilo marketplace.
+- Endereços por cliente com endereço selecionado exibido no header.
+- Menu de perfil estabilizado e remoção do acesso ao layout antigo de produtos.
 
-Deploys
-
+## Deploy
 - Frontend: https://ux-software.vercel.app
 - Backend: https://ux-software.onrender.com
+
+Para detalhes de rotas e setup de cada app, veja [frontend/README.md](frontend/README.md) e [backend/README.md](backend/README.md).

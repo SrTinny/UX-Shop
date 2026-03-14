@@ -1,77 +1,44 @@
 # Frontend - UX Shop
 
-Frontend da aplicação (Next.js + React + TypeScript). Consome a API do backend para produtos, carrinho e auth.
+Aplicação cliente em Next.js (App Router) consumindo a API do backend.
 
-Tecnologias principais
-- Next.js (App Router), React, TypeScript, TailwindCSS
+## Stack
+- Next.js, React, TypeScript, TailwindCSS
 - Axios, React Hook Form, Zod, Sonner
 
-Estrutura (resumo)
+## Rotas principais
+- `/`: home principal (vitrine estilo marketplace)
+- `/products`: redireciona para `/`
+- `/products/[slug]`: detalhe do produto
+- `/account`: gestão da conta e dos endereços
+- `/cart`, `/login`, `/register`, `/admin/products`
 
-```markdown
-frontend/
-  app/
-    components/ → componentes reutilizáveis de produto
-      Button.tsx
-      Footer.tsx
-      HeaderBar.tsx
-      Input.tsx
-      Skeleton.tsx
-      ThemeToggle.tsx
-      useDebounce.ts                 → hook de debounce para buscas
-    admin/
-      products/
-        AdminProductsClient.tsx
-        page.tsx
-    cart/
-      page.tsx
-    login/ → página de login
-      LoginClient.tsx
-      page.tsx
-    products/
+## Sessão e autenticação
+- Sessão baseada em cookies HttpOnly (sem token salvo em `localStorage`).
+- Hidratação do usuário atual via `GET /auth/me`.
+- Refresh automático de sessão no interceptor do Axios.
+- Envio automático de `X-CSRF-Token` para métodos não idempotentes.
 
-      Como rodar (resumo)
+## Header e navegação
+- Header exibe o endereço selecionado do usuário.
+- Dropdown de perfil com comportamento estável para mouse/teclado.
+- Navegação sem atalho para layout legado de produtos.
 
-      1. Instalar dependências
+## Como rodar
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-      ```powershell
-  cd "C:\Users\joaov\Documents\Projetos\UX Shop\frontend"
-      npm install
-      ```
+Build de produção:
 
-      2. Rodar em desenvolvimento
+```powershell
+npm run build
+```
 
-      ```powershell
-      npm run dev
-      ```
+## Variável importante
+- `NEXT_PUBLIC_API_URL`
 
-      Variável importante: `NEXT_PUBLIC_API_URL`
-
-      Usuários de teste
-
-      - Admin: `admin@example.com` / `123456`
-      - Cliente: `user@example.com` / `123456`
-
-      Deploy
-
-      - Frontend: https://ux-software.vercel.app
-
-
----
-
-## ✅ Requisitos Atendidos
-
-Este frontend cobre os pontos exigidos para **Desenvolvedor Front-End**:
-
-* Consumo da API real (CRUD, auth, carrinho).
-* Formulários com validação e máscaras.
-* Proteção de rotas.
-* UI/UX moderna e responsiva.
-* Integração completa com backend no Render + DB no Neon.
-
----
-
-## 🌐 Deploy
-
-* **Frontend (Vercel):** [https://ux-software.vercel.app](https://ux-software.vercel.app)
-* **Backend (Render):** [https://ux-software.onrender.com](https://ux-software.onrender.com)
+## Deploy
+- Frontend: https://ux-software.vercel.app
