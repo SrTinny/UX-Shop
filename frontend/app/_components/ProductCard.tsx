@@ -28,8 +28,9 @@ function highlight(text: string, term: string) {
   const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(`(${safe})`, 'ig');
   const parts = text.split(re);
+  const normalizedTerm = term.toLocaleLowerCase('pt-BR');
   return parts.map((p, i) =>
-    re.test(p) ? (
+    p.toLocaleLowerCase('pt-BR') === normalizedTerm ? (
       <mark key={i} className="bg-brand/20 text-brand rounded px-0.5">
         {p}
       </mark>
