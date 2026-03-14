@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import HeaderBar from './_components/HeaderBar';
 import Footer from './_components/Footer';
+import Skeleton from './_components/Skeleton';
 
 export const metadata: Metadata = {
   title: 'UX Shop',
@@ -21,7 +22,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem={false}  // ignore tema do sistema (opcional)
         >
           {/* Header global (wrapped in Suspense to allow client navigation hooks to hydrate) */}
-            <Suspense fallback={null}>
+            <Suspense
+              fallback={(
+                <header
+                  className="sticky top-0 z-40 border-b"
+                  style={{ background: 'var(--color-header)', borderColor: 'var(--color-border)' }}
+                >
+                  <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                    <Skeleton className="h-10 w-full max-w-xl" />
+                  </div>
+                </header>
+              )}
+            >
               <HeaderBar />
             </Suspense>
 
