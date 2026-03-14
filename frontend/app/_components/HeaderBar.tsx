@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { isAuthenticated, isAdmin, clearToken } from "@/lib/auth";
+import { getCurrentUser, hydrateSession, logout } from "@/lib/auth";
+import { AUTH_CHANGED_EVENT, type AuthUser } from "@/lib/auth-store";
 import { api } from '@/lib/api';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
@@ -29,6 +30,11 @@ export default function HeaderBar() {
   const [query, setQuery] = useState(initialQuery);
   const searchDebounceRef = useRef<number | null>(null);
 
+  const applyAuthState = (user: AuthUser | null | undefined) => {
+    setAuthed(Boolean(user));
+    setAdmin(user?.role === 'ADMIN');
+  };
+
   const navigateWithQuery = (v: string) => {
     const params = new URLSearchParams();
     if (v.trim()) params.set('search', v.trim());
@@ -44,9 +50,23 @@ export default function HeaderBar() {
   }, [searchParams?.toString()]);
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
-    setAdmin(isAdmin());
-    setReady(true);
+    let mounted = true;
+
+    void (async () => {
+      const user = await hydrateSession();
+      if (!mounted) return;
+      applyAuthState(user);
+      setReady(true);
+    })();
+
+    const onAuthChanged = (event: Event) => {
+      const detail = (event as CustomEvent<AuthUser | null>).detail;
+      if (!mounted) return;
+      applyAuthState(detail ?? getCurrentUser());
+      setReady(true);
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged as EventListener);
 
     // Inicializa com tema salvo ou do sistema
     const saved = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -62,6 +82,10 @@ export default function HeaderBar() {
     }
 
     
+    return () => {
+      mounted = false;
+      window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged as EventListener);
+    };
   }, []);
 
   // busca quantidade do carrinho quando o header monta
@@ -69,7 +93,8 @@ export default function HeaderBar() {
     let mounted = true;
     async function load() {
       try {
-        if (!isAuthenticated()) {
+        const user = await hydrateSession();
+        if (!user) {
           setCartCount(0);
           return;
         }
@@ -108,9 +133,10 @@ export default function HeaderBar() {
   }, []);
 
   const onLogout = () => {
-    clearToken();
-    // After logout, go to homepage instead of forcing /login
-    window.location.href = "/";
+    void (async () => {
+      await logout();
+      window.location.href = "/";
+    })();
   };
 
   const toggleTheme = () => {

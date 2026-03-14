@@ -8,6 +8,7 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { mergeGuestCartToServer } from '@/lib/cart';
+import { setCurrentUser } from '@/lib/auth';
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -27,10 +28,13 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setError(null);
     try {
-      const res = await api.post("/auth/login", data);
-      const token = res.data?.token;
-      if (token) {
-        localStorage.setItem("token", token);
+      const res = await api.post("/auth/login", data, {
+        _skipAuthRefresh: true,
+        _skipAuthRedirect: true,
+      });
+      const user = res.data?.user;
+      if (user) {
+        setCurrentUser(user);
         toast.success("Login efetuado!");
         // tentar mesclar guest cart antes de redirecionar
         try {
@@ -40,7 +44,7 @@ export default function LoginPage() {
         }
         window.location.href = "/products";
       } else {
-        const msg = "Token não recebido.";
+        const msg = "Sessão não iniciada.";
         setError(msg);
         toast.error(msg);
       }

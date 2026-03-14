@@ -32,7 +32,7 @@ export function clearGuestCart() {
 }
 
 /**
- * Merge guest cart to server cart using provided token in api (api interceptor will attach token).
+ * Merge guest cart to server cart using the authenticated cookie session managed by the API client.
  * Returns true if all items were posted successfully.
  */
 export async function mergeGuestCartToServer(): Promise<boolean> {

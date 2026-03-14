@@ -1,10 +1,14 @@
 // frontend/lib/api.ts
 import axios, { AxiosError } from "axios";
-import { getToken, clearToken } from "./auth";
-import type { AxiosRequestConfig } from "axios";
+import { clearCachedAuthUser } from "./auth-store";
 
-interface RetryableAxiosRequestConfig extends AxiosRequestConfig {
-  _retryCount?: number;
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    _retryCount?: number;
+    _retryAuth?: boolean;
+    _skipAuthRefresh?: boolean;
+    _skipAuthRedirect?: boolean;
+  }
 }
 
 /** Normaliza URL e remove barras finais; sem tocar em window no build */
@@ -15,19 +19,74 @@ function normalizeBaseURL(url?: string | null) {
 }
 
 const BASE_URL = normalizeBaseURL(process.env.NEXT_PUBLIC_API_URL);
+const CSRF_COOKIE_NAME = "ux_csrf";
+
+function readCookie(name: string) {
+  if (typeof document === "undefined") return null;
+
+  const found = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+
+  if (!found) return null;
+  return decodeURIComponent(found.slice(name.length + 1));
+}
+
+function getRequestPath(url?: string) {
+  if (!url) return "";
+
+  try {
+    return new URL(url, BASE_URL ?? "http://localhost").pathname;
+  } catch {
+    return url.split("?")[0] ?? "";
+  }
+}
+
+function isUnsafeMethod(method?: string) {
+  const normalized = method?.toUpperCase() ?? "GET";
+  return normalized === "POST" || normalized === "PUT" || normalized === "PATCH" || normalized === "DELETE";
+}
+
+function isPublicAuthRequest(url?: string) {
+  const path = getRequestPath(url);
+  return path === "/auth/login" || path === "/auth/register" || path.startsWith("/auth/activate/");
+}
+
+function shouldSkipRefresh(url?: string) {
+  const path = getRequestPath(url);
+  return isPublicAuthRequest(path) || path === "/auth/refresh" || path === "/auth/logout";
+}
+
+function redirectToLogin() {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname === "/login") return;
+  window.location.href = "/login";
+}
+
+const refreshClient = axios.create({
+  baseURL: BASE_URL,
+  timeout: 45000,
+  withCredentials: true,
+});
 
 export const api = axios.create({
   baseURL: BASE_URL,
   timeout: 45000, // ↑ tolera cold start do Render (pode deixar 60_000 se quiser)
+  withCredentials: true,
 });
 
-// ===== Auth header =====
+// ===== CSRF header =====
 api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
+  config.withCredentials = true;
+
+  if (isUnsafeMethod(config.method)) {
+    const csrfToken = readCookie(CSRF_COOKIE_NAME);
     config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+    if (csrfToken) {
+      config.headers["X-CSRF-Token"] = csrfToken;
+    }
   }
+
   return config;
 });
 
@@ -36,19 +95,52 @@ const MAX_RETRIES = 3;
 api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
-    // Se 401: limpar token e mandar para login
-    if (error.response?.status === 401) {
-      clearToken();
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.href = "/login";
+    const cfg = (error.config ?? {}) as import("axios").AxiosRequestConfig;
+    const status = error.response?.status;
+    const path = getRequestPath(cfg.url);
+
+    if (status === 401 && isPublicAuthRequest(path)) {
+      return Promise.reject(error);
+    }
+
+    if (status === 401 && !cfg._skipAuthRefresh && !cfg._retryAuth && !shouldSkipRefresh(path)) {
+      cfg._retryAuth = true;
+
+      try {
+        const csrfToken = readCookie(CSRF_COOKIE_NAME);
+        await refreshClient.post(
+          "/auth/refresh",
+          undefined,
+          {
+            headers: csrfToken ? { "X-CSRF-Token": csrfToken } : undefined,
+            _skipAuthRefresh: true,
+            _skipAuthRedirect: true,
+          },
+        );
+
+        return api(cfg);
+      } catch {
+        clearCachedAuthUser();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth:expired"));
+        }
+        if (!cfg._skipAuthRedirect) {
+          redirectToLogin();
+        }
+        return Promise.reject(error);
+      }
+    }
+
+    if (status === 401) {
+      clearCachedAuthUser();
+      if (!cfg._skipAuthRedirect) {
+        redirectToLogin();
       }
       return Promise.reject(error);
     }
 
-    const cfg: RetryableAxiosRequestConfig = (error.config ?? {}) as RetryableAxiosRequestConfig;
     const isTimeout = error.code === "ECONNABORTED";   // timeout do axios
     const noResponse = !error.response;               // DNS, rede, CORS, etc.
-    const status = error.response?.status;
     const shouldRetryStatus = typeof status === "number" && (status >= 500 || status === 429); // 5xx ou 429
 
     if ((isTimeout || noResponse || shouldRetryStatus) && (cfg._retryCount ?? 0) < MAX_RETRIES) {

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { api } from '@/lib/api';
-import { isAuthenticated } from '@/lib/auth';
+import { hydrateSession } from '@/lib/auth';
 import { toast } from 'sonner';
 import { PlusIcon, MinusIcon, TrashIcon } from '@/app/components/Icons';
 
@@ -33,11 +33,23 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      window.location.href = '/login';
-    } else {
+    let mounted = true;
+
+    void (async () => {
+      const user = await hydrateSession();
+      if (!mounted) return;
+
+      if (!user) {
+        window.location.href = '/login';
+        return;
+      }
+
       setReady(true);
-    }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function load() {

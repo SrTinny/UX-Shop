@@ -1,11 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { clearToken } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 
 export default function Header() {
-  const handleLogout = () => {
-    clearToken();
+  const handleLogout = async () => {
+    await logout();
     window.location.href = "/login";
   };
 

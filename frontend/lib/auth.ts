@@ -1,60 +1,72 @@
-import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import { api } from "./api";
+import {
+  clearCachedAuthUser,
+  getCachedAuthUser,
+  setCachedAuthUser,
+  type AuthUser,
+} from "./auth-store";
 
-const TOKEN_KEY = "token";
+let inFlightSessionRequest: Promise<AuthUser | null> | null = null;
 
-function safeLocalStorage() {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
+export async function hydrateSession(force = false): Promise<AuthUser | null> {
+  const cached = getCachedAuthUser();
+
+  if (!force && cached !== undefined) {
+    return cached;
   }
+
+  if (!force && inFlightSessionRequest) {
+    return inFlightSessionRequest;
+  }
+
+  inFlightSessionRequest = api
+    .get<{ user: AuthUser }>("/auth/me", { _skipAuthRedirect: true })
+    .then((response) => {
+      const user = response.data?.user ?? null;
+      setCachedAuthUser(user);
+      return user;
+    })
+    .catch((error: unknown) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        clearCachedAuthUser();
+        return null;
+      }
+
+      throw error;
+    })
+    .finally(() => {
+      inFlightSessionRequest = null;
+    });
+
+  return inFlightSessionRequest;
 }
 
-/** Lê o token somente quando houver window/localStorage */
-export function getToken(): string | null {
-  const ls = safeLocalStorage();
-  return ls ? ls.getItem(TOKEN_KEY) : null;
+export function getCurrentUser() {
+  return getCachedAuthUser();
 }
 
-export function setToken(token: string) {
-  const ls = safeLocalStorage();
-  if (ls) ls.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken() {
-  const ls = safeLocalStorage();
-  if (ls) ls.removeItem(TOKEN_KEY);
+export function setCurrentUser(user: AuthUser | null) {
+  setCachedAuthUser(user);
 }
 
 export function isAuthenticated(): boolean {
-  return !!getToken();
-}
-
-type JwtPayload = {
-  id: string;
-  email: string;
-  role?: "USER" | "ADMIN";
-  exp?: number; // epoch (segundos)
-};
-
-export function getUserFromToken(): JwtPayload | null {
-  const token = getToken();
-  if (!token) return null;
-  try {
-    const payload = jwtDecode<JwtPayload>(token);
-    // exp existe e já expirou?
-    if (payload?.exp && Date.now() >= payload.exp * 1000) {
-      clearToken();
-      return null;
-    }
-    return payload;
-  } catch {
-    return null;
-  }
+  return getCachedAuthUser() != null;
 }
 
 export function isAdmin(): boolean {
-  const payload = getUserFromToken();
-  return payload?.role === "ADMIN";
+  return getCachedAuthUser()?.role === "ADMIN";
+}
+
+export async function logout() {
+  try {
+    await api.post("/auth/logout", undefined, {
+      _skipAuthRefresh: true,
+      _skipAuthRedirect: true,
+    });
+  } catch {
+    // Limpeza local deve acontecer mesmo se o backend já invalidou a sessão.
+  } finally {
+    clearCachedAuthUser();
+  }
 }

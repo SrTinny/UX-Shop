@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 // Link removido (uso centralizado no HeaderBar)
 import axios from 'axios';
 import { api } from '@/lib/api';
-import { isAuthenticated } from '@/lib/auth';
+import { hydrateSession } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
 import LoginModal from '@/app/components/LoginModal';
 import { toast } from 'sonner';
@@ -202,7 +202,8 @@ export default function ProductsClient() {
 
   const fetchCartQty = useCallback(async () => {
     try {
-      if (!isAuthenticated()) {
+      const user = await hydrateSession();
+      if (!user) {
         setCartQty(0);
         return;
       }
@@ -242,7 +243,8 @@ export default function ProductsClient() {
   useIntersectionObserver({ target: sentinelRef, onIntersect: handleIntersect, enabled: hasMore && !loading });
 
   async function addToCart(productId: string) {
-    if (!isAuthenticated()) {
+    const user = await hydrateSession();
+    if (!user) {
       setPendingGuestProduct(productId);
       setShowLoginModal(true);
       return;

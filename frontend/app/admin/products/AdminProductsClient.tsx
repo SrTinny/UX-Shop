@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import axios from "axios";
-import { isAuthenticated, isAdmin } from "@/lib/auth";
+import { hydrateSession } from "@/lib/auth";
 import { toast } from "sonner";
 import ProductFormModal from './ProductFormModal';
 import ProductAdminCard from './ProductAdminCard';
@@ -58,16 +58,29 @@ export default function AdminProductsPage() {
 
   // Guard (auth + role)
   useEffect(() => {
-    if (!isAuthenticated()) {
-      window.location.href = "/login";
-      return;
-    }
-    if (!isAdmin()) {
-      toast.error("Acesso restrito a administradores.");
-      window.location.href = "/products";
-      return;
-    }
-    setReady(true);
+    let mounted = true;
+
+    void (async () => {
+      const user = await hydrateSession();
+      if (!mounted) return;
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      if (user.role !== "ADMIN") {
+        toast.error("Acesso restrito a administradores.");
+        window.location.href = "/products";
+        return;
+      }
+
+      setReady(true);
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
 

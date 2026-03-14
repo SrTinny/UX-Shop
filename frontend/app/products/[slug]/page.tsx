@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { api } from '@/lib/api';
-import { isAuthenticated } from '@/lib/auth';
+import { hydrateSession } from '@/lib/auth';
 import { addGuestItem } from '@/lib/cart';
 import { toast } from 'sonner';
 import ProductCard from '@/app/_components/ProductCard';
@@ -77,7 +77,8 @@ export default function ProductPage() {
 
   async function handleAddToCart() {
     if (!product) return;
-    if (!isAuthenticated()) {
+    const user = await hydrateSession();
+    if (!user) {
       addGuestItem(product.id, 1);
       try { window.dispatchEvent(new CustomEvent('cart:updated')); } catch {}
       toast.success('Item adicionado ao carrinho (convidado)');
@@ -182,7 +183,8 @@ export default function ProductPage() {
           <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {related.map((r) => (
               <ProductCard key={r.id} product={r} searchTerm="" onAddToCart={async (id: string) => {
-                if (!isAuthenticated()) { addGuestItem(id, 1); toast.success('Item adicionado ao carrinho (convidado)'); return; }
+                const user = await hydrateSession();
+                if (!user) { addGuestItem(id, 1); toast.success('Item adicionado ao carrinho (convidado)'); return; }
                 try { await api.post('/cart/items', { productId: id, quantity: 1 }); window.dispatchEvent(new CustomEvent('cart:updated')); toast.success('Item adicionado ao carrinho'); } catch { toast.error('Erro'); }
               }} />
             ))}
