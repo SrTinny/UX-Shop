@@ -13,12 +13,9 @@ function requireUser(req: Request): asserts req is Request & { user: JwtUser } {
 
 /** Pega o carrinho do usuário; se não existir, cria */
 async function getOrCreateCartByUserId(userId: string) {
-  // Evita depender de chave única em userId
-  let cart = await prisma.cart.findFirst({ where: { userId } });
-  if (!cart) {
-    cart = await prisma.cart.create({ data: { userId } });
-  }
-  return cart;
+  const existing = await prisma.cart.findUnique({ where: { userId } });
+  if (existing) return existing;
+  return prisma.cart.create({ data: { userId } });
 }
 
 /** GET /cart -> retorna o carrinho com itens + info básica do produto */
@@ -50,30 +47,43 @@ export async function addItem(req: Request, res: Response) {
   }
 
   const { productId, quantity } = parsed.data;
+  const userId = req.user.id;
 
-  // valida produto existir
-  const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true } });
-  if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
+  const result = await prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({ where: { id: productId }, select: { id: true } });
+    if (!product) return null;
 
-  const cart = await getOrCreateCartByUserId(req.user.id);
+    let cart = await tx.cart.findUnique({ where: { userId } });
+    if (!cart) {
+      cart = await tx.cart.create({ data: { userId } });
+    }
 
-  // se já existe o item desse produto, incrementa
-  const existing = await prisma.cartItem.findFirst({
-    where: { cartId: cart.id, productId },
-  });
+    const existing = await tx.cartItem.findFirst({
+      where: { cartId: cart.id, productId },
+    });
 
-  const item = existing
-    ? await prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + quantity },
-        include: { product: true },
-      })
-    : await prisma.cartItem.create({
+    if (existing) {
+      return {
+        isNew: false,
+        item: await tx.cartItem.update({
+          where: { id: existing.id },
+          data: { quantity: existing.quantity + quantity },
+          include: { product: true },
+        }),
+      };
+    }
+
+    return {
+      isNew: true,
+      item: await tx.cartItem.create({
         data: { cartId: cart.id, productId, quantity },
         include: { product: true },
-      });
+      }),
+    };
+  });
 
-  res.status(existing ? 200 : 201).json(item);
+  if (!result) return res.status(404).json({ message: 'Produto não encontrado' });
+  return res.status(result.isNew ? 201 : 200).json(result.item);
 }
 
 /** PATCH /cart/items/:itemId -> { quantity } (0 = remove) */

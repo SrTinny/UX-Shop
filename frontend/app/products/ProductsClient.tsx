@@ -341,7 +341,7 @@ export default function ProductsClient() {
 
   useIntersectionObserver({ target: sentinelRef, onIntersect: handleIntersect, enabled: hasMore && !loading });
 
-  async function addToCart(productId: string) {
+  const addToCart = useCallback(async (productId: string) => {
     const user = await hydrateSession();
     if (!user) {
       setPendingGuestProduct(productId);
@@ -349,7 +349,6 @@ export default function ProductsClient() {
       return;
     }
 
-    const prev = cartQty;
     setCartQty((q) => q + 1);
 
     try {
@@ -359,7 +358,7 @@ export default function ProductsClient() {
       } catch {}
       toast.success('Item adicionado ao carrinho!');
     } catch (e: unknown) {
-      setCartQty(prev);
+      setCartQty((q) => q - 1);
       let msg = 'Erro ao adicionar ao carrinho';
       if (axios.isAxiosError(e)) {
         msg =
@@ -370,9 +369,9 @@ export default function ProductsClient() {
         msg = e.message;
       }
       toast.error(msg);
-    } finally {
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- all referenced values are module-level imports or stable React state setters
+  }, []);
 
   function handleContinueGuest() {
     if (!pendingGuestProduct) return;

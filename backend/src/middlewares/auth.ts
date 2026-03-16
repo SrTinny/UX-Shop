@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../config/prisma';
 import { env } from '../config/env';
 import { getAccessTokenFromRequest } from '../modules/auth/auth.security';
 
@@ -22,16 +21,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     const id = typeof payload.sub === 'string' ? payload.sub : undefined;
     if (!id) return res.status(401).json({ message: 'Token inválido' });
 
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: { id: true, role: true, isActive: true },
-    });
-
-    if (!user || !user.isActive) {
+    if (!payload.isActive) {
       return res.status(401).json({ message: 'Token inválido ou expirado' });
     }
 
-    req.user = { id: user.id, role: user.role };
+    req.user = { id, role: payload.role as 'USER' | 'ADMIN' };
     return next();
   } catch {
     return res.status(401).json({ message: 'Token inválido ou expirado' });
