@@ -151,7 +151,7 @@ export async function login(req: Request, res: Response) {
 
   if (!user.isActive) return res.status(403).json({ message: 'Conta não ativada' });
 
-  const accessToken = signAccessToken(user.id, user.role);
+  const accessToken = signAccessToken(user.id, user.role, user.isActive);
   const refreshToken = createOpaqueToken();
   const csrfToken = createCsrfToken();
   const metadata = getClientMetadata(req);
@@ -236,7 +236,7 @@ export async function refreshSession(req: Request, res: Response) {
 
   const nextRefreshToken = createOpaqueToken();
   const nextRefreshTokenHash = hashToken(nextRefreshToken);
-  const accessToken = signAccessToken(session.user.id, session.user.role);
+  const accessToken = signAccessToken(session.user.id, session.user.role, session.user.isActive);
   const csrfToken = createCsrfToken();
   const metadata = getClientMetadata(req);
 

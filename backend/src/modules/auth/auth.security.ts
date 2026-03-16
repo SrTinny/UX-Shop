@@ -59,8 +59,8 @@ export function toPublicUser(user: PublicUserInput) {
   };
 }
 
-export function signAccessToken(userId: string, role: Role) {
-  return jwt.sign({ role }, env.jwtSecret, {
+export function signAccessToken(userId: string, role: Role, isActive: boolean) {
+  return jwt.sign({ role, isActive }, env.jwtSecret, {
     subject: userId,
     expiresIn: `${env.accessTokenMinutes}m`,
   });

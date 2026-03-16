@@ -1,7 +1,8 @@
 "use client";
 
+import React, { memo, useState } from 'react';
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
 // PlusIcon removed; using text label for add button
 
 type Product = {
@@ -46,9 +47,7 @@ type Props = {
   onAddToCart: (productId: string) => Promise<void> | void;
 };
 
-import Link from 'next/link';
-
-export default function ProductCard({ product, searchTerm, onAddToCart }: Props) {
+function ProductCard({ product, searchTerm, onAddToCart }: Props) {
   const [adding, setAdding] = useState(false);
 
   const handleAdd = async () => {
@@ -134,3 +133,5 @@ export default function ProductCard({ product, searchTerm, onAddToCart }: Props)
     </li>
   );
 }
+
+export default memo(ProductCard);

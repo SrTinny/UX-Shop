@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../../config/prisma'
-import { Prisma, ProductTag } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 /* ========= helpers ========= */
 function slugify(s: string) {
@@ -104,83 +104,34 @@ export async function listProducts(req: Request, res: Response) {
     }
   })()
 
-  // debug: parâmetros recebidos e orderBy — removido em produção
+  const productSelect = {
+    id: true,
+    name: true,
+    slug: true,
+    description: true,
+    price: true,
+    stock: true,
+    imageUrl: true,
+    tag: true,
+    categoryId: true,
+    category: { select: { id: true, name: true } },
+    createdAt: true,
+    updatedAt: true,
+  } as const
 
-  type SelectedProduct = {
-    id: string
-    name: string
-    slug: string
-    description: string | null
-    price: number
-    stock: number
-    imageUrl: string | null
-    tag: ProductTag | null
-    categoryId: string | null
-    category: { id: string; name: string } | null
-    createdAt: Date
-    updatedAt: Date
-  }
-
-  let items: SelectedProduct[] = []
-  let total = 0
-
-  // If ordering by name we fetch all matching rows and sort in JS using localeCompare
-  // to avoid differences in DB collation. Then apply pagination slice.
-  if (sort === 'name_asc' || sort === 'name_desc') {
-    const all = await prisma.product.findMany({
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        imageUrl: true,
-        tag: true,
-        categoryId: true,
-        category: { select: { id: true, name: true } },
-        createdAt: true,
-        updatedAt: true,
-      }
-    })
-    total = all.length
-    all.sort((a, b) => {
-      const cmp = String(a.name).localeCompare(String(b.name), 'pt-BR', { sensitivity: 'base' })
-      return sort === 'name_asc' ? cmp : -cmp
-    })
-    const start = (page - 1) * perPage
-    items = all.slice(start, start + perPage)
-  } else {
-    const [list, cnt] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip: (page - 1) * perPage,
-        take: perPage,
-        orderBy,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          description: true,
-          price: true,
-          stock: true,
-          imageUrl: true,
-          tag: true,
-          categoryId: true,
-          category: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        }
-      }),
-      prisma.product.count({ where }),
-    ])
-    items = list
-    total = cnt
-  }
+      skip: (page - 1) * perPage,
+      take: perPage,
+      orderBy,
+      select: productSelect,
+    }),
+    prisma.product.count({ where }),
+  ])
 
   // map enum tag to localized string for frontend
-  const itemsMapped = items.map((it: SelectedProduct) => ({
+  const itemsMapped = items.map((it) => ({
     ...it,
     categoryName: it.category?.name ?? null,
     tag: it.tag === 'PROMOCAO' ? 'Promoção' : it.tag === 'NOVO' ? 'Novo' : undefined,
@@ -227,20 +178,18 @@ export async function createProduct(req: Request, res: Response) {
   const data = parsed.data
 
   try {
-    // handle free-text categoryName: find or create Category and set categoryId
+    // handle free-text categoryName: upsert Category by slug and set categoryId
     let categoryId: string | undefined
     const cnameRaw = data.categoryName
     if (cnameRaw) {
       const cname = String(cnameRaw).trim()
       if (cname) {
         const cslug = slugify(cname)
-        let cat = await prisma.category.findUnique({ where: { slug: cslug } })
-        if (!cat) {
-          cat = await prisma.category.findFirst({ where: { name: { equals: cname, mode: 'insensitive' } } })
-        }
-        if (!cat) {
-          cat = await prisma.category.create({ data: { name: cname, slug: cslug } })
-        }
+        const cat = await prisma.category.upsert({
+          where: { slug: cslug },
+          update: {},
+          create: { name: cname, slug: cslug },
+        })
         categoryId = cat.id
       }
     }
@@ -318,7 +267,7 @@ export async function updateProduct(req: Request, res: Response) {
   if (patch.description !== undefined) data.description = patch.description ?? null
   if (patch.imageUrl !== undefined) data.imageUrl = patch.imageUrl ?? null
   if (patch.tag !== undefined) data.tag = patch.tag ?? null
-  // handle categoryName in update: find/create category and set categoryId
+  // handle categoryName in update: upsert category by slug and set categoryId
   let updateCategoryId: string | undefined
   if (patch.categoryName !== undefined) {
     const cnameRaw = patch.categoryName
@@ -326,13 +275,11 @@ export async function updateProduct(req: Request, res: Response) {
       const cname = String(cnameRaw).trim()
       if (cname) {
         const cslug = slugify(cname)
-        let cat = await prisma.category.findUnique({ where: { slug: cslug } })
-        if (!cat) {
-          cat = await prisma.category.findFirst({ where: { name: { equals: cname, mode: 'insensitive' } } })
-        }
-        if (!cat) {
-          cat = await prisma.category.create({ data: { name: cname, slug: cslug } })
-        }
+        const cat = await prisma.category.upsert({
+          where: { slug: cslug },
+          update: {},
+          create: { name: cname, slug: cslug },
+        })
         updateCategoryId = cat.id
       } else {
         updateCategoryId = null as unknown as string
